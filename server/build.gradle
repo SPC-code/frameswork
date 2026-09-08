@@ -1,0 +1,40 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm"
+    id "org.jetbrains.kotlin.plugin.serialization"
+    id "com.google.devtools.ksp"
+    id "application"
+}
+
+version = null
+
+application {
+    mainClass = "dev.inmo.micro_utils.startup.launcher.MainKt"
+}
+
+dependencies {
+    api project(":frameswork.features.common.server")
+    api project(":frameswork.features.panel.server")
+    api project(":frameswork.features.frames.server")
+    api project(":frameswork.features.processor.server")
+    api project(":frameswork.features.ui.panel.frames.server")
+
+    api libs.ktor.server.tomcat
+    api libs.ktor.websockets
+    api libs.ktor.client.apache
+    api libs.ktor.serialization.kotlinx.json
+    api libs.exposed.jdbc
+    api libs.psql
+    api libs.h2
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
+}
+
+ksp {
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}

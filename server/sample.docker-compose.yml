@@ -1,0 +1,21 @@
+version: "3.4"
+
+services:
+  frameswork_srv:
+    image: git.sciprog.center/insanusmokrassar/frameswork-srv
+    container_name: frameswork_postgres
+    volumes:
+      - "./config.json:/config.json:ro"
+      - "./db/:/db/"
+      - "./file.onnx:/file.onnx:ro"
+    ports:
+      - "8196:8196"
+  frameswork_postgres:
+    image: postgres
+    container_name: frameswork_postgres
+    environment:
+      POSTGRES_USER: "test"
+      POSTGRES_PASSWORD: "test"
+      POSTGRES_DB: "test"
+    ports:
+      - "8401:5432"

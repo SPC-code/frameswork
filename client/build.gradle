@@ -1,0 +1,46 @@
+plugins {
+    id "org.jetbrains.kotlin.multiplatform"
+    id "org.jetbrains.kotlin.plugin.serialization"
+    alias(libs.plugins.compose)
+    alias(libs.plugins.kt.compose)
+}
+
+apply from: "$mppJsWithCompose"
+
+kotlin {
+    js(IR) {
+        binaries.executable()
+    }
+    sourceSets {
+        commonMain {
+            dependencies {
+                api project(":frameswork.features.common.web")
+                api project(":frameswork.features.panel.web")
+                api project(":frameswork.features.processor.web")
+                api project(":frameswork.features.ui.sample")
+                api project(":frameswork.features.ui.panel")
+                api project(":frameswork.features.ui.panel.frames.web")
+                api libs.microutils.startup.launcher
+                api libs.navigation.mvvm
+                api compose.runtime
+            }
+        }
+        jsMain {
+            dependencies {
+                implementation compose.web.core
+            }
+        }
+    }
+}
+
+project.tasks.configureEach {
+    if (it.name == "jsBrowserProductionWebpack") {
+        it.dependsOn("jsDevelopmentExecutableCompileSync")
+    }
+}
+
+project.tasks.configureEach {
+    if (it.name == "jsProductionExecutableCompileSync") {
+        it.dependsOn("jsBrowserDevelopmentWebpack")
+    }
+}

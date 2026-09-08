@@ -1,0 +1,94 @@
+{
+  "host": "0.0.0.0",
+  "port": 8196,
+  "publicHost": "0.0.0.0",
+  "rootRoute": null,
+  "staticFolders": {
+    "": "../client/build/dist/js/developmentExecutable"
+  },
+  "database": {
+    "url": "jdbc:h2:./local.test"
+  },
+  "plugins": [
+    "space.kscience.frameswork.features.common.server.JVMPlugin",
+    "space.kscience.frameswork.features.frames.common.JVMPlugin",
+    "space.kscience.frameswork.features.processor.server.JVMPlugin",
+    "space.kscience.frameswork.features.markup.common.JVMPlugin",
+    "space.kscience.frameswork.features.markup.server.JVMPlugin",
+    "space.kscience.frameswork.features.panel.server.JVMPlugin",
+    "space.kscience.frameswork.features.ui.panel.frames.server.JVMPlugin"
+  ],
+  "middlewares": {
+    "crops": {
+      "main": {
+        "x": 1200,
+        "y": 200,
+        "width": 450,
+        "height": 450
+      }
+    }
+  },
+  "processors": {
+    "main": {
+      "middlewares": [
+        "crop_main",
+        "ml_markup_adapter",
+        "recommendations_adapter"
+      ],
+      "processingThrottlingMillis": 42,
+      "parallelProcessing": 24,
+      "rejectOldParallelHandling": true
+    }
+  },
+  "onnx":  {
+    "path": "/home/aleksey/projects/spc/frameswork-srv/server/best.onnx"
+  },
+  "useCache": true,
+  "cameras": {
+    "presets": [
+      [
+        "ffmpeg_rtsp",
+        {
+          "id": "sample_camera",
+          "url": ""
+        }
+      ]
+    ]
+  },
+  "markup": {
+    "frameSources": {
+      "sample_camera": {
+        "parameters": [
+          {
+            "id": "sample_parameter_id_1",
+            "title": "SampleParameter",
+            "thresholds": {
+              "lowerCritical": 0.0,
+              "lowerAnomaly": 1.0,
+              "lowerNormal": 2.0,
+              "upperNormal": 3.0,
+              "upperAnomaly": 4.0,
+              "upperCritical": 5.0
+            }
+          },
+          {
+            "id": "sample_parameter_id_2",
+            "title": "SampleParameter",
+            "thresholds": {
+              "lowerCritical": 6.0,
+              "lowerAnomaly": 7.0,
+              "lowerNormal": 8.0,
+              "upperNormal": 9.0,
+              "upperAnomaly": 10.0,
+              "upperCritical": 11.0
+            }
+          }
+        ],
+        "matrix": [
+          [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+          [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5]
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+plugins {
+    id "org.jetbrains.kotlin.multiplatform"
+    id "org.jetbrains.kotlin.plugin.serialization"
+    alias(libs.plugins.compose)
+    alias(libs.plugins.kt.compose)
+}
+
+apply from: "$mppJsWithCompose"
+
+kotlin {
+    sourceSets {
+        commonMain {
+            dependencies {
+                api project(":frameswork.features.common.common")
+                api libs.navigation.mvvm
+                api libs.microutils.koin
+                api libs.microutils.repos.ktor.client
+                api libs.ktor.client.content.negotiation
+                api libs.ktor.serialization.kotlinx.json
+            }
+        }
+    }
+}

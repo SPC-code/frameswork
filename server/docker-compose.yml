@@ -1,0 +1,12 @@
+version: "3.4"
+
+services:
+  frameswork_postgres:
+    image: postgres
+    container_name: frameswork_postgres
+    environment:
+      POSTGRES_USER: "test"
+      POSTGRES_PASSWORD: "test"
+      POSTGRES_DB: "test"
+    ports:
+      - "8401:5432"

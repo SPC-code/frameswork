@@ -1,0 +1,47 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        mavenLocal()
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+
+    dependencies {
+        classpath libs.android.tools.build
+        classpath libs.android.dexcount
+        classpath libs.kotlin.gradle.plugin
+        classpath libs.kotlin.serialization.plugin
+        classpath libs.kotlin.dokka.plugin
+        classpath libs.kotlin.ksp
+    }
+}
+
+plugins {
+    alias(libs.plugins.nmcp.aggregation)
+}
+
+
+if ((project.hasProperty('SONATYPE_USER') || System.getenv('SONATYPE_USER') != null) && (project.hasProperty('SONATYPE_PASSWORD') || System.getenv('SONATYPE_PASSWORD') != null)) {
+    nmcpAggregation {
+        centralPortal {
+            username = project.hasProperty('SONATYPE_USER') ? project.property('SONATYPE_USER') : System.getenv('SONATYPE_USER')
+            password = project.hasProperty('SONATYPE_PASSWORD') ? project.property('SONATYPE_PASSWORD') : System.getenv('SONATYPE_PASSWORD')
+            validationTimeout = Duration.ofHours(4)
+            publishingType = System.getenv('PUBLISHING_TYPE') != "" ? System.getenv('PUBLISHING_TYPE') : "USER_MANAGED"
+        }
+
+        publishAllProjectsProbablyBreakingProjectIsolation()
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+        maven { url "https://nexus.inmo.dev/repository/maven-releases/" }
+        mavenLocal()
+    }
+}
+
+apply from: "./extensions.gradle"
+// apply from: "./github_release.gradle"

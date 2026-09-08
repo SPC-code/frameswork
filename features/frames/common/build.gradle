@@ -1,0 +1,23 @@
+plugins {
+    id "org.jetbrains.kotlin.multiplatform"
+    id "org.jetbrains.kotlin.plugin.serialization"
+}
+
+apply from: "$mppJvmJs"
+
+kotlin {
+    sourceSets {
+        commonMain {
+            dependencies {
+                api project(":frameswork.features.common.common")
+                api libs.microutils.meta
+            }
+        }
+        jvmMain {
+            dependencies {
+                api libs.javacv.opencv
+                api libs.javacv.platform
+            }
+        }
+    }
+}

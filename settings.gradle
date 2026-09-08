@@ -1,0 +1,41 @@
+rootProject.name = 'frameswork'
+
+String[] includes = [
+    ":features:common:common",
+    ":features:common:server",
+    ":features:common:web",
+
+    ":features:frames:common",
+    ":features:frames:server",
+    ":features:frames:web",
+
+    ":features:processor:common",
+    ":features:processor:server",
+    ":features:processor:web",
+
+    ":features:panel:common",
+    ":features:panel:server",
+    ":features:panel:web",
+
+
+    ":features:ui:panel:frames:common",
+    ":features:ui:panel:frames:server",
+    ":features:ui:panel:frames:web",
+
+    ":features:ui:sample",
+    ":features:ui:panel",
+
+    ":client",
+    ":server",
+]
+
+
+includes.each { originalName ->
+    String projectDirectory = "${rootProject.projectDir.getAbsolutePath()}${originalName.replace(":", File.separator)}"
+    String projectName = "${rootProject.name}${originalName.replace(":", ".")}"
+    String projectIdentifier = ":${projectName}"
+    include projectIdentifier
+    ProjectDescriptor project = project(projectIdentifier)
+    project.name = projectName
+    project.projectDir = new File(projectDirectory)
+}
