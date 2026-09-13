@@ -6,6 +6,11 @@
   "staticFolders": {
     "": "/static/"
   },
+  "panel_info": {
+    "default": {
+
+    }
+  },
   "database": {
     "url": "jdbc:h2:./local.test"
   },
@@ -31,17 +36,12 @@
   "processors": {
     "main": {
       "middlewares": [
-        "crop_main",
-        "ml_markup_adapter",
-        "recommendations_adapter"
+        "crop_main"
       ],
       "processingThrottlingMillis": 42,
       "parallelProcessing": 24,
       "rejectOldParallelHandling": true
     }
-  },
-  "onnx":  {
-    "path": "/home/aleksey/projects/spc/frameswork-srv/server/best.onnx"
   },
   "useCache": true,
   "cameras": {
@@ -54,43 +54,5 @@
         }
       ]
     ]
-  },
-  "markup": {
-    "frameSources": {
-      "sample_camera": {
-        "parameters": [
-          {
-            "id": "sample_parameter_id_1",
-            "title": "SampleParameter",
-            "thresholds": {
-              "lowerCritical": 0.0,
-              "lowerAnomaly": 1.0,
-              "lowerNormal": 2.0,
-              "upperNormal": 3.0,
-              "upperAnomaly": 4.0,
-              "upperCritical": 5.0
-            },
-            "units": "м³/ч"
-          },
-          {
-            "id": "sample_parameter_id_2",
-            "title": "SampleParameter",
-            "thresholds": {
-              "lowerCritical": 6.0,
-              "lowerAnomaly": 7.0,
-              "lowerNormal": 8.0,
-              "upperNormal": 9.0,
-              "upperAnomaly": 10.0,
-              "upperCritical": 11.0
-            },
-            "units": "см/с"
-          }
-        ],
-        "matrix": [
-          [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0],
-          [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5]
-        ]
-      }
-    }
   }
 }

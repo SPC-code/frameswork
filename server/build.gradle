@@ -2,14 +2,9 @@ plugins {
     id "org.jetbrains.kotlin.jvm"
     id "org.jetbrains.kotlin.plugin.serialization"
     id "com.google.devtools.ksp"
-    id "application"
 }
 
 apply from: "$publish_jvm"
-
-application {
-    mainClass = "dev.inmo.micro_utils.startup.launcher.MainKt"
-}
 
 dependencies {
     api project(":frameswork.features.common.server")

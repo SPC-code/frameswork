@@ -1,5 +1,6 @@
 package space.kscience.frameswork.features.panel.web
 
+import dev.inmo.micro_utils.coroutines.runCatchingLogging
 import dev.inmo.micro_utils.ktor.client.bodyOrNull
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -15,7 +16,12 @@ class KtorPanelFeature(
     private val client: HttpClient
 ) : PanelFeature {
     override suspend fun getPanelConfig(): PanelInfo? {
-        return client.get(PanelConstants.getPanelFullPath).bodyOrNull {
+        return client.get(PanelConstants.getPanelFullPath).bodyOrNull<PanelInfo> {
+            it.bodyAsText() != "null"
+        }
+    }
+    override suspend fun getDefaultConfig(): PanelInfo? {
+        return client.get(PanelConstants.getPanelDefaultPath).bodyOrNull<PanelInfo> {
             it.bodyAsText() != "null"
         }
     }

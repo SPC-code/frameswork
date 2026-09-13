@@ -24,6 +24,14 @@ class PanelRoutingsConfigurator(
                     call.respond(config)
                 }
             }
+            get(PanelConstants.getPanelDefaultSubpath) {
+                val config = panelFeature.getDefaultConfig()
+                if (config == null) {
+                    call.respond("null")
+                } else {
+                    call.respond(config)
+                }
+            }
             post(PanelConstants.setPanelSubpath) {
                 val config = call.receive<PanelInfo>()
                 val setResult = panelFeature.setPanelConfig(config)

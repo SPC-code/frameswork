@@ -36,6 +36,17 @@ publishing {
         }
     }
     repositories {
+        if ((project.hasProperty('SCIPROG_USER') || System.getenv('SCIPROG_USER') != null) && (project.hasProperty('SCIPROG_PASSWORD') || System.getenv('SCIPROG_PASSWORD') != null)) {
+            maven {
+                name = "SCIProg"
+                url = uri("https://maven.sciprog.center/kscience")
+        
+                credentials {
+                    username = project.hasProperty('SCIPROG_USER') ? project.property('SCIPROG_USER') : System.getenv('SCIPROG_USER')
+                    password = project.hasProperty('SCIPROG_PASSWORD') ? project.property('SCIPROG_PASSWORD') : System.getenv('SCIPROG_PASSWORD')
+                }
+            }
+        }
         if ((project.hasProperty('SONATYPE_USER') || System.getenv('SONATYPE_USER') != null) && (project.hasProperty('SONATYPE_PASSWORD') || System.getenv('SONATYPE_PASSWORD') != null)) {
             maven {
                 name = "sonatype"
