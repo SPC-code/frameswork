@@ -8,9 +8,7 @@ plugins {
 apply from: "$mppJsWithCompose"
 
 kotlin {
-    js(IR) {
-        binaries.executable()
-    }
+    js()
     sourceSets {
         commonMain {
             dependencies {

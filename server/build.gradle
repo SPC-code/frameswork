@@ -5,7 +5,7 @@ plugins {
     id "application"
 }
 
-version = null
+apply from: "$publish_jvm"
 
 application {
     mainClass = "dev.inmo.micro_utils.startup.launcher.MainKt"
