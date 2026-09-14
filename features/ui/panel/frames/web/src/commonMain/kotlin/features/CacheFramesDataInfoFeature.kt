@@ -16,21 +16,28 @@ import kotlin.collections.set
 import kotlin.time.Duration
 
 /**
- * [FramesDataInfoFeature] decorator that caches metadata queries and delegates frame streaming.
+ * [FramesDataInfoFeature] decorator that caches metadata queries and memoizes frame-flow handles.
  *
  * Each metadata operation has an independent, mutex-protected cache. Processor-specific and
  * source-specific results are cached separately by their identifiers; `null` processor lookups are
- * cached as well. Frame flows bypass the cache and are returned directly by [fallback].
+ * cached as well. The first request for a processor/source pair obtains a flow from [fallback];
+ * subsequent requests collect that same flow object. This class does not itself turn a cold flow
+ * into a hot or shared flow.
  *
  * @param fallback feature used to refresh expired metadata and provide frame flows.
  * @param cacheTime duration for which a cached metadata result remains valid.
+ * @param scope retained as part of the public constructor contract; flow lifetime is controlled by
+ * [fallback] and the collectors.
  */
 open class CacheFramesDataInfoFeature(
     private val fallback: FramesDataInfoFeature,
     private val cacheTime: Duration = 5.seconds,
     private val scope: CoroutineScope,
 ) : FramesDataInfoFeature {
+    /** Cached processor snapshot paired with the time at which it was loaded. */
     private var getAvailableProcessorsCache: Pair<DateTime, Set<String>>? = null
+
+    /** Serializes reads and refreshes of the processor cache. */
     private val getAvailableProcessorsCacheMutex = Mutex()
 
     /**
@@ -51,7 +58,10 @@ open class CacheFramesDataInfoFeature(
         }
     }
 
+    /** Per-processor source snapshots paired with their load times. */
     private val getAvailableFramesSourcesCache: MutableMap<String, Pair<DateTime, Set<FramesSourceId>?>> = mutableMapOf()
+
+    /** Serializes reads and refreshes of all source-cache entries. */
     private val getAvailableFramesSourcesCacheMutex = Mutex()
 
     /**
@@ -73,17 +83,22 @@ open class CacheFramesDataInfoFeature(
         }
     }
 
+    /** Memoized fallback flow objects, indexed by processor name and source-id string. */
     private val framesHalfColdFlows = MutableStateFlow<Map<String, Map<String, Flow<ByteArrayFrameData>>>>(emptyMap())
+
+    /** Serializes lookup and creation of memoized frame-flow objects. */
     private val framesHalfColdFlowsLocker = Mutex()
 
+    /** Obtains the fallback flow that will be memoized for [processorName] and [id]. */
     private fun allocateFramesFlow(processorName: String, id: FramesSourceId): Flow<ByteArrayFrameData> {
         return fallback.getFramesFlow(processorName, id)
     }
 
     /**
-     * Returns the shared, reconnecting WebSocket frame flow for [processorName] and [id].
+     * Returns a flow that collects the memoized fallback flow for [processorName] and [id].
      *
-     * Repeated calls for the same pair reuse the previously allocated flow.
+     * Repeated calls for the same pair reuse the previously allocated flow object. Reconnection and
+     * sharing behavior, if any, comes from [fallback].
      */
     override fun getFramesFlow(processorName: String, id: FramesSourceId): Flow<ByteArrayFrameData> {
         return flow {

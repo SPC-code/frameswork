@@ -20,6 +20,7 @@ import space.kscience.frameswork.features.frames.common.models.FrameData
  *
  * @param json the [Json] instance used to serialize the [MetaContainer]; must be symmetric with the
  * one passed to [decodeFrameData] on the receiving side.
+ * @return the length-prefixed metadata followed by the frame payload.
  */
 suspend fun FrameData.encodeToByteArray(json: Json): ByteArray {
     val meta = meta
@@ -40,6 +41,7 @@ suspend fun FrameData.encodeToByteArray(json: Json): ByteArray {
  *
  * @param json the [Json] instance used to deserialize the [MetaContainer]; must be compatible with
  * the one used during encoding.
+ * @return decoded metadata and payload wrapped in [ByteArrayFrameData].
  */
 fun ByteArray.decodeFrameData(json: Json): ByteArrayFrameData {
     val dataBytes = ByteArray(4) { get(it) }.toInt()

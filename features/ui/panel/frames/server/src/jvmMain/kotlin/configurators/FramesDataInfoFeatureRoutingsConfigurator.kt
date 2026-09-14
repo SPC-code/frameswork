@@ -23,10 +23,28 @@ import space.kscience.frameswork.features.ui.panel.frames.common.PanelCameraCons
 import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesFlowFeatureId
 import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesDataInfoFeature
 
+/**
+ * Installs the JVM HTTP and WebSocket API for a [FramesDataInfoFeature].
+ *
+ * All routes are relative and grouped beneath [PanelCameraConstants.rootPathPart]. The two HTTP
+ * operations expose processor and source snapshots. The WebSocket operation accepts serialized
+ * [FramesFlowFeatureId] selections and streams encoded frame payloads for the latest valid selection.
+ *
+ * @property feature feature queried by the installed routes.
+ * @property json format used to decode WebSocket selections and encode frame metadata.
+ */
 class FramesDataInfoFeatureRoutingsConfigurator(
     private val feature: FramesDataInfoFeature,
     private val json: Json
 ) : ApplicationRoutingConfigurator.Element {
+    /**
+     * Installs `cameras/getAvailableProcessors`, `cameras/getAvailableCameras`, and
+     * `cameras/getFrames` on this route.
+     *
+     * `getAvailableCameras` requires the `id` query parameter. `getFrames` is a WebSocket route: a
+     * valid text [FramesFlowFeatureId] selects or switches the emitted flow, text `ping` receives
+     * text `pong`, and each frame is sent as one final binary WebSocket message.
+     */
     override fun Route.invoke() {
         route(
             PanelCameraConstants.rootPathPart

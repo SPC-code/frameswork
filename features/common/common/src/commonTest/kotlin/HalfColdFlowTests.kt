@@ -19,8 +19,10 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/** Verifies the subscription-driven lifecycle of [toHalfColdFlow]. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class HalfColdFlowTests {
+    /** Verifies that an existing subscriber receives values when the first inner flow arrives later. */
     @Test
     fun subscriberBeforeInnerFlowReceivesValuesOnceFlowArrives() = runTest {
         val innerFlow = MutableSharedFlow<Int>(replay = 1)
@@ -46,6 +48,7 @@ class HalfColdFlowTests {
         job.cancel()
     }
 
+    /** Verifies that one shared inner-flow collection exists only while subscribers are present. */
     @Test
     fun innerFlowIsCollectedOnlyWhileThereAreSubscribers() = runTest {
         var collectionCount = 0
@@ -97,6 +100,7 @@ class HalfColdFlowTests {
         assertEquals(2, cancellationCount)
     }
 
+    /** Verifies that concurrent subscribers receive values from the same inner-flow collection. */
     @Test
     fun activeSubscribersReceiveEachValueFromOneSharedCollection() = runTest {
         val innerFlow = MutableSharedFlow<Int>()

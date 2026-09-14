@@ -8,10 +8,22 @@ import space.kscience.frameswork.features.common.web.utils.appendOrSetPartsWith
 import space.kscience.frameswork.features.common.web.utils.fillAbsentPartsWith
 import space.kscience.frameswork.features.common.web.utils.set
 
+/**
+ * Resolves relative Ktor client requests against a runtime-provided base URL.
+ *
+ * The request path is appended to the base path, request and base query parameters are retained,
+ * and an absent base scheme is treated as HTTP. WebSocket requests are upgraded to `wss` when the
+ * base URL is HTTPS and downgraded to `ws` when it is HTTP.
+ *
+ * @property urlGetter supplies the base URL immediately before each request.
+ * @property useDefaultUrlPrefix whether to parse and normalize empty base-path segments before the
+ * request URL is merged. This does not add a fixed endpoint prefix.
+ */
 class DefaultUrlHttpClientConfigurator(
     private val urlGetter: suspend () -> String,
     private val useDefaultUrlPrefix: Boolean = true
 ) : HttpClientConfigurator {
+    /** Installs the request hook that merges every outgoing URL with the current base URL. */
     override fun HttpClientConfig<*>.configure() {
         val plugin = createClientPlugin("DefaultServerUrlPlugin") {
             onRequest { request, _ ->

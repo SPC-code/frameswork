@@ -14,6 +14,15 @@ import space.kscience.frameswork.features.common.common.utils.mapAsStateFlow
 import space.kscience.frameswork.features.frames.common.models.FramesSourceId
 import kotlin.collections.plus
 
+/**
+ * Mutable frame-source registry backed by process memory.
+ *
+ * Mutations are serialized through an actor in [scope]. All connectors from [tmpPreset] are present
+ * immediately after construction, and no state is persisted across process restarts.
+ *
+ * @param tmpPreset connectors used to initialize the registry.
+ * @param scope lifecycle scope for registry mutations and observed state flows.
+ */
 class InMemoryFramesSourcesCollector(
     private val tmpPreset: List<FrameSourceConnector>,
     private val scope: CoroutineScope
@@ -27,10 +36,12 @@ class InMemoryFramesSourcesCollector(
         }
     }
 
+    /** Returns a snapshot of the identifiers currently held in memory. */
     override suspend  fun getAvailableFramesSourcesIds(): Set<FramesSourceId> {
         return camerasConnectorsState.value.keys
     }
 
+    /** Observes the connector stored under [id], or `null` while it is absent. */
     override fun allocateConnectorFlow(id: FramesSourceId): StateFlow<FrameSourceConnector?> {
         return framesSourcesIdsListUpdatesFlow.map {
             return@map if (id in it) {
@@ -41,6 +52,11 @@ class InMemoryFramesSourcesCollector(
         }.stateIn(scope, SharingStarted.Eagerly, camerasConnectorsState.value[id])
     }
 
+    /**
+     * Adds or replaces [frameSourceConnector] under its identifier.
+     *
+     * @return `true` when the identifier is present after the queued mutation completes.
+     */
     override suspend fun addCamera(frameSourceConnector: FrameSourceConnector): Boolean {
         val result = CompletableDeferred<Boolean>()
         camerasModificationsActor.send {
@@ -54,6 +70,11 @@ class InMemoryFramesSourcesCollector(
         return result.await()
     }
 
+    /**
+     * Removes the connector stored under [id].
+     *
+     * @return `true` when the identifier is absent after the queued mutation completes.
+     */
     override suspend fun removeCamera(id: FramesSourceId): Boolean {
         val result = CompletableDeferred<Boolean>()
         camerasModificationsActor.send {

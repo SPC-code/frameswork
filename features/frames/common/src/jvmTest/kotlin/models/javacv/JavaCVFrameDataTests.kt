@@ -11,7 +11,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
+/** Tests byte extraction and metadata copying for [JavaCVFrameData]. */
 class JavaCVFrameDataTests {
+    /** Verifies that conversion returns the JavaCV frame data buffer's backing array. */
     @Test
     fun toByteArrayReturnsFrameDataPayload() = runTest {
         val payload = byteArrayOf(1, 0, -1, 127)
@@ -23,6 +25,7 @@ class JavaCVFrameDataTests {
         assertSame(payload, frame.toByteArray())
     }
 
+    /** Verifies that metadata copying shares the JavaCV frame and preserves the original metadata. */
     @Test
     fun copyWithModifiedMetaKeepsFrameAndDoesNotChangeOriginalMeta() {
         val javaCvFrame = Frame()
@@ -41,6 +44,7 @@ class JavaCVFrameDataTests {
         assertEquals(480, copy.meta[FrameSourceHeight])
     }
 
+    /** Builds the dimension metadata used by test frames. */
     private fun dimensions(width: Int, height: Int) = buildMetaContainer {
         put(FrameSourceWidth, width)
         put(FrameSourceHeight, height)

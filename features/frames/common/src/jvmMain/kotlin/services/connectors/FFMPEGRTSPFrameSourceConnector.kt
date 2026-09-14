@@ -17,6 +17,18 @@ import space.kscience.frameswork.features.frames.common.services.FrameSourceConn
 import kotlin.time.Duration.Companion.milliseconds
 
 
+/**
+ * JVM frame-source connector that reads an RTSP stream through JavaCV's FFmpeg grabber.
+ *
+ * Each allocated flow owns a grabber configured for RTSP over TCP. Frames are converted to
+ * [BufferedImageFrameData] and annotated with source, dimensions, source timestamp, and receive time.
+ * Failed start attempts are retried after [reconnectDelayMillis]. Cancelling collection stops and
+ * releases the grabber.
+ *
+ * @param id identifier attached to emitted frame metadata.
+ * @param rtspUrl RTSP URL passed to the FFmpeg grabber.
+ * @param reconnectDelayMillis delay before retrying a failed grabber start, in milliseconds.
+ */
 class FFMPEGRTSPFrameSourceConnector(
     override val id: FramesSourceId,
     private val rtspUrl: String,
@@ -24,6 +36,12 @@ class FFMPEGRTSPFrameSourceConnector(
 ) : FrameSourceConnector {
     private val toMatConverter: ToMat = ToMat()
     private val converter = Java2DFrameConverter()
+
+    /**
+     * Allocates a cold flow backed by a dedicated FFmpeg grabber.
+     *
+     * @return a flow of JPEG-capable buffered-image frames from the RTSP stream.
+     */
     override fun allocateFlow(): Flow<FrameData> {
         val grabber = FFmpegFrameGrabber(rtspUrl).apply {
             timeout = 5000000
@@ -69,5 +87,6 @@ class FFMPEGRTSPFrameSourceConnector(
         }
     }
 
+    /** Returns the serializable RTSP configuration represented by this connector. */
     override fun createConfig(): FrameSourceConnectorConfig = FFMPEGRTSPConfig(id.string, rtspUrl)
 }

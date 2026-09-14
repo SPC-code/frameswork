@@ -20,18 +20,18 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Transforms the current [Flow] into a [SharedFlow], providing a mechanism to reuse the emitted values
- * across multiple subscribers while managing subscriptions dynamically.
+ * Exposes this flow as a subscription-aware [SharedFlow].
  *
- * The method sets up a [SharedFlow] with configurable replay behavior and buffering, while also managing
- * lifecycle and resource cleanup using a [CoroutineScope].
+ * The source is collected once while the returned flow has subscribers. Source collection is cancelled
+ * after the final subscriber leaves and is restarted if a subscriber arrives later. Internal work runs in
+ * a linked supervisor scope derived from [scope].
  *
- * @param scope The [CoroutineScope] in which collection from the source [Flow] and emissions to the [SharedFlow] will occur.
- * @param replay The number of values that will be replayed to new subscribers. Defaults to `0`.
- * @param onBufferOverflow The strategy to handle buffer overflows in the [SharedFlow]. Default is [BufferOverflow.DROP_OLDEST].
- * @return A [Pair] where:
- *   - The first component is the [SharedFlow] that emits values from the source [Flow].
- *   - The second component is the [Job] representing the underlying coroutine scope created for managing the collection and emissions.
+ * @param scope Parent scope for collection and subscription tracking.
+ * @param replay Number of recent values replayed to a new subscriber.
+ * @param onBufferOverflow Strategy used when the shared flow's replay and extra buffer are full.
+ * @return The read-only shared flow and the [Job] that owns its internal linked supervisor scope.
+ *   Cancelling the job stops all internal work.
+ * @throws IllegalArgumentException If [replay] is negative.
  */
 fun <T> Flow<T>.toSharedFlow(
     scope: CoroutineScope,

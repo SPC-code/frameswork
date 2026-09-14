@@ -21,36 +21,23 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Converts a `Flow<Flow<T>>` into a single "half-cold" [SharedFlow] that collects from the latest
- * inner [Flow] only while there are active subscribers.
+ * Converts this flow of inner flows into a subscription-aware, "half-cold" [SharedFlow].
  *
- * ## Half-cold semantics
+ * The outer flow is observed in a linked supervisor scope. An inner flow is collected only while the
+ * returned shared flow has subscribers, so all subscribers share one inner-flow collection. When a
+ * transfer starts, it uses the newest inner flow observed at that moment. Removing the final subscriber
+ * cancels that transfer; a later subscriber starts a new transfer from the then-current inner flow.
  *
- * Unlike a fully hot flow (always collecting) or a fully cold flow (restarts for every subscriber),
- * a half-cold flow has the following lifecycle:
- * - **No subscribers:** the active transfer job is cancelled and the strong reference to the output
- *   [MutableSharedFlow] is dropped; only a [WeakRef] is kept.
- * - **First subscriber arrives:** if the weak reference is still alive the same [MutableSharedFlow]
- *   instance is reused and a new transfer job is started to pipe values from the latest inner flow into the output flow.
- * - **All subscribers leave again:** the cycle repeats — transfer is stopped, strong reference is
- *   released.
+ * The output is retained weakly while inactive so an existing flow instance can be reused without making
+ * that weak reference responsible for its lifetime. State transitions are serialized with a [Mutex].
  *
- * The internal [CoroutineScope] (`subscope`) is cancelled permanently when both the strong *and*
- * the weak reference to the output flow have been cleared (i.e. the GC has reclaimed the object
- * and no subscribers hold it alive). At that point [suspendPoint] causes the coroutine to yield
- * so the cancellation takes effect.
- *
- * ## Thread safety
- *
- * All state mutations ([existsTransferJob], [tmpOutputSharedFlow], [predeadFlow]) are synchronized
- * through a [Mutex] inside `updateState`, making the function safe for concurrent calls from the
- * subscriptions-count observer and the inner-flow observer.
- *
- * @param T Element type of the inner flows.
- * @param scope Parent [CoroutineScope] for the internal supervisor scope. The returned flow stays
- *   alive at most as long as [scope] stays active.
- * @return A read-only [SharedFlow] that emits values from the most recently received inner [Flow]
- *   whenever at least one subscriber is collecting it.
+ * @param T Element type emitted by the inner flows.
+ * @param scope Parent scope for observing the outer flow and running subscription-driven transfers.
+ * @param replay Number of recent values replayed to a new subscriber.
+ * @param onBufferOverflow Strategy used when the shared flow's replay and extra buffer are full.
+ * @return The read-only shared flow and the [Job] that owns its internal linked supervisor scope.
+ *   Cancelling the job stops outer-flow observation and the active transfer.
+ * @throws IllegalArgumentException If [replay] is negative.
  */
 fun <T> Flow<Flow<T>>.toHalfColdFlow(
     scope: CoroutineScope,

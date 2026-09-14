@@ -22,8 +22,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 
+/** Exercises source discovery, connection sharing, and connector replacement in [DefaultFramesCollector]. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class DefaultFramesCollectorTests {
+    /** Verifies that source identifiers and allocated flows follow registry additions and removals. */
     @Test
     fun sourcesAndAllocatedFlowsFollowAvailableSources() = runTest {
         val sourceId = FramesSourceId("camera-a")
@@ -48,6 +50,7 @@ class DefaultFramesCollectorTests {
         assertNull(collector.allocateFramesFlow(sourceId))
     }
 
+    /** Verifies that subscribers share one collection and that collection restarts after becoming idle. */
     @Test
     fun subscribersShareOneSourceCollectionAndItRestartsAfterLastSubscriberLeaves() = runTest {
         val sourceId = FramesSourceId("shared-camera")
@@ -93,6 +96,7 @@ class DefaultFramesCollectorTests {
         assertEquals(2, source.cancellationCount)
     }
 
+    /** Verifies that an already allocated flow switches to a replacement source with the same identifier. */
     @Test
     fun replacingConnectorSwitchesAnExistingAllocatedFlowToTheNewSource() = runTest {
         val sourceId = FramesSourceId("replaceable-camera")
@@ -125,6 +129,7 @@ class DefaultFramesCollectorTests {
         subscriber.cancelAndJoin()
     }
 
+    /** Controllable source registry used to drive collector state in tests. */
     private class TestFramesSourcesCollector(
         initialSources: Map<FramesSourceId, FramesSource> = emptyMap(),
     ) : FramesSourcesCollector {
@@ -135,11 +140,14 @@ class DefaultFramesCollectorTests {
 
         override val framesSourcesIdsListUpdatesFlow: StateFlow<Set<FramesSourceId>> = sourceIds
 
+        /** Returns the identifiers in the test registry's current snapshot. */
         override suspend fun getAvailableFramesSourcesIds(): Set<FramesSourceId> = activeSources.keys
 
+        /** Returns a stable state flow for the connector identified by [id]. */
         override fun allocateConnectorFlow(id: FramesSourceId): StateFlow<FramesSource?> =
             connectorFlows.getOrPut(id) { MutableStateFlow(null) }
 
+        /** Replaces the registry snapshot and publishes matching connector and identifier updates. */
         fun setSources(sources: Map<FramesSourceId, FramesSource>) {
             activeSources = sources
             (connectorFlows.keys + sources.keys).forEach { id ->
@@ -149,13 +157,20 @@ class DefaultFramesCollectorTests {
         }
     }
 
+    /** Frame source that records upstream collection and cancellation counts. */
     private class TrackingFramesSource : FramesSource {
+        /** Mutable stream through which tests publish frames. */
         val frames = MutableSharedFlow<FrameData>()
+
+        /** Number of times the allocated flow has begun collection. */
         var collectionCount = 0
             private set
+
+        /** Number of allocated-flow collections that have been cancelled. */
         var cancellationCount = 0
             private set
 
+        /** Allocates a flow that forwards [frames] while updating the tracking counters. */
         override fun allocateFlow(): Flow<FrameData> = flow {
             collectionCount++
             try {

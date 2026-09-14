@@ -29,8 +29,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
+/** Verifies the query, conversion, and timestamp-filtering behavior of [ServerFramesDataInfoFeature]. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ServerFramesDataInfoFeatureTests {
+    /** Verifies that processor queries expose registered names, source snapshots, and unknowns. */
     @Test
     fun processorQueriesExposeNamesAndCurrentSources() = runTest {
         val leftSource = FramesSourceId("left")
@@ -61,6 +63,7 @@ class ServerFramesDataInfoFeatureTests {
         assertEquals(null, feature.getAvailableFramesSources("missing"))
     }
 
+    /** Verifies that requesting frames from an unknown processor produces an empty flow. */
     @Test
     fun framesFlowForUnknownProcessorCompletesWithoutValues() = runTest {
         val feature = ServerFramesDataInfoFeature(
@@ -71,6 +74,7 @@ class ServerFramesDataInfoFeatureTests {
         assertTrue(feature.getFramesFlow("missing", FramesSourceId("camera")).toList().isEmpty())
     }
 
+    /** Verifies byte conversion and rejection of missing or decreasing receive timestamps. */
     @Test
     fun framesFlowConvertsFramesAndDropsMissingOrOlderTimestamps() = runTest {
         val sourceId = FramesSourceId("camera")
@@ -114,6 +118,7 @@ class ServerFramesDataInfoFeatureTests {
         assertEquals(1, converted.conversionCount)
     }
 
+    /** Suspends until [processorName] reports exactly [expected] sources. */
     private suspend fun awaitSources(
         container: ProcessorsContainer,
         processorName: String,
@@ -122,6 +127,7 @@ class ServerFramesDataInfoFeatureTests {
         container.getProcessor(processorName)!!.sourcesListUpdatesFlow.first { it == expected }
     }
 
+    /** Creates a processor container whose named processors all consume [collector]. */
     private fun processorsContainer(
         scope: CoroutineScope,
         collector: FramesCollector,
@@ -139,31 +145,49 @@ class ServerFramesDataInfoFeatureTests {
         middlewaresFactories = emptyList(),
     )
 
+    /** Builds frame metadata containing [timestamp] as its receive timestamp. */
     private fun meta(timestamp: DateTime): MetaContainer = buildMetaContainer {
         put(FrameReceiveTimestamp, timestamp)
     }
 
+    /**
+     * Minimal frame collector backed by fixed source flows.
+     *
+     * @param initialSources initial value exposed through [sourcesListUpdatesFlow].
+     * @property frameFlows source-to-flow mapping returned by [allocateFramesFlow].
+     */
     private class TestFramesCollector(
         initialSources: Set<FramesSourceId> = emptySet(),
         private val frameFlows: Map<FramesSourceId, Flow<FrameData>> = emptyMap(),
     ) : FramesCollector {
+        /** Mutable source snapshot initialized from [initialSources]. */
         override val sourcesListUpdatesFlow = MutableStateFlow(initialSources)
 
+        /** Returns the fixed frame flow assigned to [id], or `null` when none was assigned. */
         override fun allocateFramesFlow(id: FramesSourceId): Flow<FrameData>? = frameFlows[id]
     }
 
+    /**
+     * Non-byte-backed test frame that records payload conversions.
+     *
+     * @property bytes payload returned by [toByteArray].
+     * @property meta metadata exposed with the frame.
+     */
     private class ConvertibleFrameData(
         private val bytes: ByteArray,
         override val meta: MetaContainer,
     ) : FrameData {
+        /** Number of times [toByteArray] has converted this frame. */
         var conversionCount: Int = 0
             private set
 
+        /** Records one conversion and returns the configured payload. */
         override suspend fun toByteArray(): ByteArray {
             conversionCount++
             return bytes
         }
 
+        /** Always fails because this test frame is not used for metadata transformations. */
         override fun copyWithModifiedMeta(block: MetaContainer.Builder.() -> Unit): FrameData {
             error("The test processor has no metadata-modifying middleware")
         }

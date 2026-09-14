@@ -4,6 +4,7 @@ import dev.inmo.micro_utils.koin.singleWithRandomQualifier
 import dev.inmo.micro_utils.startup.plugin.StartPlugin
 import dev.inmo.navigation.core.NavigationNodeFactory
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.modules.SerializersModule
 import org.koin.core.Koin
 import org.koin.core.module.Module
 import space.kscience.frameswork.features.common.web.models.ViewConfig

@@ -16,7 +16,9 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
+/** Tests the binary frame envelope produced by [encodeToByteArray] and consumed by [decodeFrameData]. */
 class ByteArrayFrameMetaToByteArrayTests {
+    /** JSON configuration containing the polymorphic metadata keys exercised by these tests. */
     private val json = Json {
         useArrayPolymorphism = true
         allowStructuredMapKeys = true
@@ -27,6 +29,7 @@ class ByteArrayFrameMetaToByteArrayTests {
         }
     }
 
+    /** Verifies the length-prefixed wire layout and that the frame payload is converted only once. */
     @Test
     fun encodeUsesDocumentedLayoutAndConvertsPayloadOnce() = runTest {
         val payload = byteArrayOf(0, -1, 2, 127, -128)
@@ -60,6 +63,7 @@ class ByteArrayFrameMetaToByteArrayTests {
         assertEquals(1, frame.conversionCount)
     }
 
+    /** Verifies that non-empty metadata and binary payload bytes survive a complete round trip. */
     @Test
     fun encodedFrameRoundTripsMetaAndBinaryPayload() = runTest {
         val payload = byteArrayOf(12, 0, -45, 99)
@@ -76,6 +80,7 @@ class ByteArrayFrameMetaToByteArrayTests {
         assertEquals(meta, decoded.meta)
     }
 
+    /** Verifies that an empty payload and empty metadata container round-trip successfully. */
     @Test
     fun emptyPayloadAndMetaRoundTrip() = runTest {
         val decoded = ByteArrayFrameData(byteArrayOf(), MetaContainer.EMPTY)
@@ -86,18 +91,22 @@ class ByteArrayFrameMetaToByteArrayTests {
         assertEquals(MetaContainer.EMPTY, decoded.meta)
     }
 
+    /** Test frame that counts payload conversions. */
     private class CountingFrameData(
         private val payload: ByteArray,
         override val meta: MetaContainer,
     ) : FrameData {
+        /** Number of invocations of [toByteArray]. */
         var conversionCount = 0
             private set
 
+        /** Records one conversion and returns the configured payload. */
         override suspend fun toByteArray(): ByteArray {
             conversionCount++
             return payload
         }
 
+        /** Fails because metadata copying is outside the scope of these envelope tests. */
         override fun copyWithModifiedMeta(block: MetaContainer.Builder.() -> Unit): FrameData =
             error("Copying is not used by these tests")
     }

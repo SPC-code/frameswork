@@ -15,7 +15,9 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
+/** Tests JPEG conversion and metadata copying for [BufferedImageFrameData]. */
 class BufferedImageFrameDataTests {
+    /** Verifies that conversion produces a readable JPEG with the source dimensions. */
     @Test
     fun toByteArrayProducesReadableJpegWithOriginalDimensions() = runTest {
         val image = BufferedImage(4, 3, BufferedImage.TYPE_INT_RGB).apply {
@@ -39,6 +41,7 @@ class BufferedImageFrameDataTests {
         assertEquals(3, decoded.height)
     }
 
+    /** Verifies that metadata copying shares the image and preserves the original metadata. */
     @Test
     fun copyWithModifiedMetaKeepsImageAndDoesNotChangeOriginalMeta() {
         val image = BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB)
@@ -57,6 +60,7 @@ class BufferedImageFrameDataTests {
         assertEquals(6, copy.meta[FrameSourceHeight])
     }
 
+    /** Builds the dimension metadata used by test frames. */
     private fun dimensions(width: Int, height: Int) = buildMetaContainer {
         put(FrameSourceWidth, width)
         put(FrameSourceHeight, height)

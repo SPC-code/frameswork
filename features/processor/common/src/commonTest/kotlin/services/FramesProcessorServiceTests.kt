@@ -20,8 +20,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 
+/** Verifies middleware sequencing and source-flow behavior of [FramesProcessorService]. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FramesProcessorServiceTests {
+    /** Verifies ordered middleware execution and recovery from a failed stage. */
     @Test
     fun processRunsMiddlewaresInOrderAndContinuesAfterFailure() = runTest {
         val input = frame(0)
@@ -53,6 +55,7 @@ class FramesProcessorServiceTests {
         assertEquals(listOf<FrameData>(input, afterFirst, afterFirst), receivedByMiddlewares)
     }
 
+    /** Verifies that the collector API exposes processed frames only for currently available sources. */
     @Test
     fun collectorContractExposesProcessedFramesForAvailableSources() = runTest {
         val sourceId = FramesSourceId("camera")
@@ -83,6 +86,7 @@ class FramesProcessorServiceTests {
         assertNull(processor.allocateFramesFlow(sourceId))
     }
 
+    /** Verifies that a persistent flow begins emitting when its requested source appears later. */
     @Test
     fun persistentFlowWaitsForARequestedSourceToBecomeAvailable() = runTest {
         val sourceId = FramesSourceId("late-camera")
@@ -103,6 +107,7 @@ class FramesProcessorServiceTests {
         assertSame(expected, received.await())
     }
 
+    /** Creates a processor with deterministic single-worker settings for a test. */
     private fun processor(
         scope: CoroutineScope,
         collector: FramesCollector,
@@ -116,21 +121,30 @@ class FramesProcessorServiceTests {
         scope = scope,
     )
 
+    /** Adapts [block] to a middleware instance. */
     private fun middleware(block: suspend (FrameData) -> FrameData) = object : FramesProcessorMiddleware {
+        /** Processes [frame] by invoking the test's [block]. */
         override suspend fun process(frame: FrameData): FrameData = block(frame)
     }
 
+    /** Creates a one-byte frame carrying [value]. */
     private fun frame(value: Byte) = ByteArrayFrameData(byteArrayOf(value), MetaContainer.EMPTY)
 
+    /** Mutable frame collector used to publish source-map snapshots during tests. */
     private class TestFramesCollector(
         initialFlows: Map<FramesSourceId, Flow<FrameData>> = emptyMap(),
     ) : FramesCollector {
+        /** Current source-to-flow snapshot. */
         private var flows = initialFlows
+
+        /** Observable identifiers from the current snapshot. */
         override val sourcesListUpdatesFlow: MutableStateFlow<Set<FramesSourceId>> =
             MutableStateFlow(initialFlows.keys)
 
+        /** Returns the flow currently associated with [id], if present. */
         override fun allocateFramesFlow(id: FramesSourceId): Flow<FrameData>? = flows[id]
 
+        /** Replaces the source snapshot with [newFlows] and publishes its identifiers. */
         fun setFlows(newFlows: Map<FramesSourceId, Flow<FrameData>>) {
             flows = newFlows
             sourcesListUpdatesFlow.value = newFlows.keys

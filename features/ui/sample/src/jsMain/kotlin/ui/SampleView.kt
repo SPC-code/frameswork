@@ -17,12 +17,23 @@ import org.koin.core.component.inject
 import space.kscience.frameswork.features.common.web.ui.FlotViewDashboard
 import kotlin.js.unsafeCast
 
+/**
+ * Compose Web navigation view for [SampleViewConfig].
+ *
+ * The view obtains a fresh [SampleViewModel] from Koin with itself as the navigation-node
+ * parameter. Its current content is the parameterless FlotView reference dashboard.
+ *
+ * @param chain navigation chain that owns this view.
+ * @param config serializable configuration associated with this view instance.
+ */
 class SampleView(
     chain: NavigationChain<ViewConfig>,
     config: SampleViewConfig,
 ) : ComposeView<SampleViewConfig, ViewConfig, SampleViewModel>(config, chain) {
+    /** Lazily injected view model bound to this navigation node. */
     override val viewModel: SampleViewModel by inject(mode = LazyThreadSafetyMode.SYNCHRONIZED) { parametersOf(this@SampleView) }
 
+    /** Draws the shared FlotView reference dashboard. */
     @Composable
     override fun onDraw() {
         super.onDraw()

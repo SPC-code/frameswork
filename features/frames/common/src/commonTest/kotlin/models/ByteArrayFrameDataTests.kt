@@ -7,7 +7,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
+/** Tests the payload and metadata-copy semantics of [ByteArrayFrameData]. */
 class ByteArrayFrameDataTests {
+    /** Verifies that byte-backed frames return the original payload reference. */
     @Test
     fun toByteArrayReturnsOriginalPayload() = runTest {
         val payload = byteArrayOf(0, 1, -1, 127)
@@ -16,6 +18,7 @@ class ByteArrayFrameDataTests {
         assertSame(payload, frame.toByteArray())
     }
 
+    /** Verifies that metadata copying preserves the payload and leaves the original metadata unchanged. */
     @Test
     fun copyWithModifiedMetaKeepsPayloadAndDoesNotChangeOriginalMeta() {
         val payload = byteArrayOf(1, 2, 3)
@@ -35,7 +38,9 @@ class ByteArrayFrameDataTests {
     }
 }
 
+/** Shared metadata fixtures for common frame-model tests. */
 internal object MetaContainerFixtures {
+    /** Builds metadata containing the supplied frame [width] and [height]. */
     fun withDimensions(width: Int, height: Int) = buildMetaContainer {
         put(FrameSourceWidth, width)
         put(FrameSourceHeight, height)

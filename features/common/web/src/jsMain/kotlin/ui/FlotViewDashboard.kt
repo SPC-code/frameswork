@@ -8,6 +8,17 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
+/**
+ * Display state for the operator-panel header.
+ *
+ * @property cellLabel currently selected process cell.
+ * @property processStatus optional short process-condition message.
+ * @property processStatusTone semantic colour for [processStatus].
+ * @property operatorName display name of the current operator.
+ * @property operatorDetails secondary operator identity or authorization details.
+ * @property operatorTone semantic colour for the operator status.
+ * @property currentTime display-ready local time.
+ */
 data class FlotViewDashboardHeader(
     val cellLabel: String,
     val processStatus: String? = null,
@@ -18,7 +29,18 @@ data class FlotViewDashboardHeader(
     val currentTime: String,
 )
 
+/** State of the process-video area in a FlotView dashboard. */
 sealed interface FlotViewDashboardVideo {
+    /**
+     * Video is available for rendering by the dashboard's video-content slot.
+     *
+     * @property liveLabel primary live-stream badge.
+     * @property liveTone semantic colour for [liveLabel].
+     * @property aiLabel optional AI-processing badge.
+     * @property aiTone semantic colour for [aiLabel].
+     * @property bottomLeftLabel optional lower-left video annotation.
+     * @property bottomRightLabel optional lower-right video annotation.
+     */
     data class Online(
         val liveLabel: String,
         val liveTone: FlotViewTone = FlotViewTone.Error,
@@ -28,6 +50,13 @@ sealed interface FlotViewDashboardVideo {
         val bottomRightLabel: String? = null,
     ) : FlotViewDashboardVideo
 
+    /**
+     * Video is unavailable and should be replaced by an explanatory state panel.
+     *
+     * @property eyebrow short category such as a connection status.
+     * @property title primary user-facing status.
+     * @property detail additional recovery or diagnostic information.
+     */
     data class Offline(
         val eyebrow: String,
         val title: String,
@@ -35,7 +64,18 @@ sealed interface FlotViewDashboardVideo {
     ) : FlotViewDashboardVideo
 }
 
+/** Availability state for the decision-support recommendation area. */
 sealed interface FlotViewDashboardRecommendation {
+    /**
+     * A recommendation that the operator may accept or dismiss.
+     *
+     * @property title recommended action.
+     * @property description evidence or reasoning shown below [title].
+     * @property eyebrow short recommendation category.
+     * @property confidence optional display-ready confidence value.
+     * @property tone semantic colour for the recommendation.
+     * @property actionsDisabled whether accept and dismiss actions are unavailable.
+     */
     data class Available(
         val title: String,
         val description: String,
@@ -45,6 +85,14 @@ sealed interface FlotViewDashboardRecommendation {
         val actionsDisabled: Boolean = false,
     ) : FlotViewDashboardRecommendation
 
+    /**
+     * Explanation shown when no actionable recommendation is available.
+     *
+     * @property eyebrow short availability category.
+     * @property title primary user-facing status.
+     * @property detail additional context.
+     * @property tone semantic colour for the status.
+     */
     data class Unavailable(
         val eyebrow: String,
         val title: String,
@@ -53,6 +101,13 @@ sealed interface FlotViewDashboardRecommendation {
     ) : FlotViewDashboardRecommendation
 }
 
+/**
+ * One labelled percentage in a bubble-size distribution.
+ *
+ * @property label human-readable range or category.
+ * @property percent integer share from 0 through 100.
+ * @throws IllegalArgumentException if [percent] is outside `0..100`.
+ */
 data class FlotViewDistributionSegment(
     val label: String,
     val percent: Int,
@@ -62,12 +117,28 @@ data class FlotViewDistributionSegment(
     }
 }
 
+/**
+ * Display-ready bubble-size distribution rendered beneath the process video.
+ *
+ * @property title section heading.
+ * @property summary compact aggregate such as the mean size.
+ * @property segments ordered distribution portions; callers decide whether their total is 100.
+ */
 data class FlotViewBubbleDistribution(
     val title: String,
     val summary: String,
     val segments: List<FlotViewDistributionSegment>,
 )
 
+/**
+ * State of the dashboard's process-control section.
+ *
+ * @property mode current automatic/manual control mode.
+ * @property setpoints ordered editable or read-only setpoints.
+ * @property sendState current state of the send operation.
+ * @property modeEnabled whether the operator may change [mode].
+ * @property policyMessage optional mode policy shown beside the controls.
+ */
 data class FlotViewDashboardControls(
     val mode: FlotViewMode,
     val setpoints: List<FlotViewSetpoint>,
@@ -76,9 +147,18 @@ data class FlotViewDashboardControls(
     val policyMessage: String? = null,
 )
 
+/** Whether the dashboard session may expose live operator controls. */
 sealed interface FlotViewDashboardSession {
+    /** The dashboard is active and its normal content may be rendered. */
     data object Active : FlotViewDashboardSession
 
+    /**
+     * The dashboard is locked and its body is replaced by a warning.
+     *
+     * @property eyebrow short lock category.
+     * @property title primary lock message.
+     * @property detail explanation or recovery guidance.
+     */
     data class Locked(
         val eyebrow: String,
         val title: String,
@@ -86,6 +166,21 @@ sealed interface FlotViewDashboardSession {
     ) : FlotViewDashboardSession
 }
 
+/**
+ * Stateless event callbacks emitted by [FlotViewDashboard].
+ *
+ * Every callback defaults to a no-op so callers can opt into only relevant interactions. Indexed
+ * callbacks use the corresponding index in the model list.
+ *
+ * @property onCellSelectorClick opens or cycles the cell selector.
+ * @property onLayerSelected handles selection in `FlotViewDashboardModel.aiLayers`.
+ * @property onRecommendationAccepted accepts the current recommendation.
+ * @property onRecommendationDismissed dismisses the current recommendation.
+ * @property onModeSelected handles a new automatic/manual mode.
+ * @property onSetpointDecrement decrements a setpoint by list index.
+ * @property onSetpointIncrement increments a setpoint by list index.
+ * @property onSend sends the pending setpoint changes.
+ */
 data class FlotViewDashboardActions(
     val onCellSelectorClick: () -> Unit = {},
     val onLayerSelected: (index: Int) -> Unit = {},
@@ -97,6 +192,13 @@ data class FlotViewDashboardActions(
     val onSend: () -> Unit = {},
 )
 
+/**
+ * User-facing labels used by the dashboard renderer.
+ *
+ * The defaults are Russian reference-design copy. Supply another instance to localize the view.
+ * The properties cover selector accessibility, section labels, recommendation actions, send-state
+ * messages, setpoint annotations, adjustment accessibility, video fallback, and AUTO-mode policy.
+ */
 data class FlotViewDashboardStrings(
     val cellSelectorLabel: String = "Выбрать ячейку",
     val aiLayersLabel: String = "AI-СЛОИ",
@@ -119,6 +221,21 @@ data class FlotViewDashboardStrings(
         "Контур в AUTO — уставки задаёт АРС. Для ручной коррекции переключите MANUAL.",
 )
 
+/**
+ * Complete immutable render model for [FlotViewDashboard].
+ *
+ * @property title panel heading.
+ * @property subtitle process-line context shown below [title].
+ * @property header operator, cell, status, and time information.
+ * @property video online/offline state for the visual surface.
+ * @property aiLayers selectable AI overlays.
+ * @property videoMetrics metrics derived from the process video.
+ * @property processMetrics general process measurements.
+ * @property recommendation available or unavailable decision-support state.
+ * @property controls process-control state and setpoints.
+ * @property bubbleDistribution optional bubble-size visualization.
+ * @property session active or locked session state.
+ */
 data class FlotViewDashboardModel(
     val title: String,
     val subtitle: String,
@@ -279,6 +396,12 @@ fun FlotViewDashboard(
     }
 }
 
+/**
+ * Renders the cell selector, optional process status, operator identity, and current time.
+ *
+ * Text and markup are supplied as composable slots, while the string labels provide accessible
+ * names for the interactive and time elements.
+ */
 @Composable
 fun FlotViewDashboardHeaderContent(
     cellSelectorLabel: String,
@@ -338,6 +461,7 @@ fun FlotViewDashboardHeaderContent(
     }
 }
 
+/** Renders the active dashboard's video, metrics, recommendation, and process controls. */
 @Composable
 private fun FlotViewDashboardBody(
     model: FlotViewDashboardModel,
@@ -464,6 +588,11 @@ private fun FlotViewDashboardBody(
     }
 }
 
+/**
+ * Renders a video/content surface with live, AI, and optional lower-corner status badges.
+ *
+ * [videoContent] is rendered below the badges and may contain a stream, image, canvas, or overlay.
+ */
 @Composable
 fun FlotViewDashboardVideoSurface(
     liveLabel: @Composable () -> Unit,
@@ -505,6 +634,7 @@ fun FlotViewDashboardVideoSurface(
     }
 }
 
+/** Renders one positioned status badge over the process-video surface. */
 @Composable
 private fun FlotViewDashboardVideoBadge(
     positionClass: String,
@@ -526,6 +656,7 @@ private fun FlotViewDashboardVideoBadge(
     }
 }
 
+/** Renders an offline-video explanation in place of process imagery. */
 @Composable
 private fun FlotViewDashboardVideoUnavailable(state: FlotViewDashboardVideo.Offline) {
     FlotViewVisualSurface {
@@ -538,6 +669,7 @@ private fun FlotViewDashboardVideoUnavailable(state: FlotViewDashboardVideo.Offl
     }
 }
 
+/** Renders the neutral placeholder used when no custom video content is supplied. */
 @Composable
 private fun FlotViewDashboardVideoPlaceholder(
     label: String = "Process video placeholder",
@@ -549,6 +681,11 @@ private fun FlotViewDashboardVideoPlaceholder(
     })
 }
 
+/**
+ * Dashboard-specific wrapper for an actionable [FlotViewRecommendationCard].
+ *
+ * The caller supplies composable title and description content plus localized action labels.
+ */
 @Composable
 fun FlotViewDashboardRecommendation(
     title: @Composable () -> Unit,
@@ -576,6 +713,7 @@ fun FlotViewDashboardRecommendation(
     )
 }
 
+/** Renders the non-actionable state of the recommendation area. */
 @Composable
 private fun FlotViewDashboardRecommendationUnavailable(
     state: FlotViewDashboardRecommendation.Unavailable,
@@ -599,6 +737,11 @@ private fun FlotViewDashboardRecommendationUnavailable(
     }
 }
 
+/**
+ * Lays out the dashboard control title, mode control, setpoints, optional policy, and send dock.
+ *
+ * All functional content is supplied as composable slots so callers retain state ownership.
+ */
 @Composable
 fun FlotViewDashboardControls(
     title: @Composable () -> Unit,
@@ -636,6 +779,7 @@ fun FlotViewDashboardControls(
     }
 }
 
+/** Renders a proportional bubble distribution and its textual legend. */
 @Composable
 private fun FlotViewDashboardDistribution(distribution: FlotViewBubbleDistribution) {
     Div(attrs = { classes(FlotViewStyleSheet.dashboardDistributionClass) }) {
@@ -682,6 +826,7 @@ private fun FlotViewDashboardDistribution(distribution: FlotViewBubbleDistributi
     }
 }
 
+/** CSS class corresponding to this dashboard tone. */
 private val FlotViewTone.dashboardToneClass: String
     get() = when (this) {
         FlotViewTone.Neutral -> FlotViewStyleSheet.toneNeutralClass

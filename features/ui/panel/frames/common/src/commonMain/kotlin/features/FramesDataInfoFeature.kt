@@ -13,12 +13,15 @@ import space.kscience.frameswork.features.frames.common.models.FramesSourceId
 interface FramesDataInfoFeature {
     /**
      * Returns the names of processors that are currently available for frame processing.
+     *
+     * @return a snapshot of the available processor names.
      */
     suspend fun getAvailableProcessors(): Set<String>
 
     /**
      * Returns the frame sources currently exposed by the processor named [processorName].
      *
+     * @param processorName name of the processor whose sources should be queried.
      * @return the processor's frame-source identifiers, or `null` when the processor is unknown.
      */
     suspend fun getAvailableFramesSources(processorName: String): Set<FramesSourceId>?
@@ -28,6 +31,10 @@ interface FramesDataInfoFeature {
      *
      * Each emitted [ByteArrayFrameData] contains both the raw frame payload and its metadata. The
      * returned flow's sharing, reconnection, and unavailable-source behavior are implementation-specific.
+     *
+     * @param processorName name of the processor that provides the frames.
+     * @param id identifier of the frame source to observe.
+     * @return a flow that emits frames for the selected processor and source.
      */
     fun getFramesFlow(processorName: String, id: FramesSourceId): Flow<ByteArrayFrameData>
 }

@@ -15,24 +15,13 @@ import space.kscience.frameswork.features.common.common.utils.halfColdFlows
 import space.kscience.frameswork.features.frames.common.models.OneConnectionFramesSource
 
 /**
- * Default implementation of the [FramesCollector] interface, designed to aggregate and manage
- * streams of frame data from multiple frame sources. It prevents multiple connections to the
- * same camera by managing a centralized flow of frame sources and their respective frame data streams.
+ * Default [FramesCollector] that shares one upstream flow for each available source.
  *
- * Internally, this class interacts with a [FramesSourcesCollector], which provides utilities
- * to enumerate available frame sources and their connections. It uses a "half-cold" flow mechanism
- * for efficient subscription management, ensuring that frame data streams are active only when required
- * by subscribers.
+ * Source additions, removals, and connector replacements are followed through [framesCollector]. A
+ * source flow is collected only while it has subscribers, preventing duplicate camera connections.
  *
- * @constructor
- * @param framesCollector A [FramesSourcesCollector] instance responsible for discovering and
- * managing underlying frame sources and their connections.
- * @param scope The [CoroutineScope] in which internal coroutines and flows are executed. This scope
- * is used to ensure proper lifecycle management of processing jobs and flows.
- *
- * @property sourcesListUpdatesFlow A [StateFlow] that emits updates to the set of currently available
- * frame sources, represented by their [FramesSourceId]. The set reflects the keys of the frame sources
- * managed by this collector.
+ * @param framesCollector registry used to discover sources and observe their connectors.
+ * @param scope lifecycle scope for the shared flows and [sourcesListUpdatesFlow].
  */
 class DefaultFramesCollector(
     private val framesCollector: FramesSourcesCollector,
@@ -53,6 +42,12 @@ class DefaultFramesCollector(
         .map { it.keys }
         .stateIn(scope = scope, SharingStarted.Eagerly, initialValue = emptySet())
 
+    /**
+     * Returns the shared flow currently allocated for [id].
+     *
+     * @param id identifier of an available frame source.
+     * @return the source's shared flow, or `null` when [id] is not currently available.
+     */
     override fun allocateFramesFlow(id: FramesSourceId): Flow<FrameData>? {
         return persistentFramesFlow.value[id]
     }

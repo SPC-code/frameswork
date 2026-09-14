@@ -31,8 +31,9 @@ import kotlin.time.Duration
 /**
  * Remote [FramesDataInfoFeature] that obtains metadata over HTTP and frames over WebSocket.
  *
- * Frame flows are shared per processor/source pair. A shared flow reconnects after a connection
- * ends and uses an application-level `ping`/`pong` exchange to detect an inactive connection.
+ * Each returned frame flow is shared in [scope]. It reconnects after a connection ends and uses an
+ * application-level `ping`/`pong` exchange to detect an inactive connection. Callers that need to
+ * reuse one flow object across repeated processor/source lookups can wrap this feature in a cache.
  *
  * @param client HTTP client used for metadata requests and WebSocket sessions.
  * @param json format used for frame-subscription messages and binary frame metadata.
@@ -49,8 +50,13 @@ open class KtorFramesDataInfoFeature(
     private val reconnectTimeoutMillis: Duration = 3.seconds,
     private val scope: CoroutineScope,
 ) : FramesDataInfoFeature {
+    /** Relative HTTP path used to list frame processors. */
     private val getAvailableProcessorsFullPath = "${PanelCameraConstants.rootPathPart}/${PanelCameraConstants.getAvailableProcessorsPathPart}"
+
+    /** Relative HTTP path used to list a processor's frame sources. */
     private val getAvailableCamerasFullPath = "${PanelCameraConstants.rootPathPart}/${PanelCameraConstants.getAvailableCamerasPathPart}"
+
+    /** Relative WebSocket path used to subscribe to frame data. */
     private val getFramesFlowFullPath = "${PanelCameraConstants.rootPathPart}/${PanelCameraConstants.getFramesPathPart}"
 
     /**
@@ -71,6 +77,10 @@ open class KtorFramesDataInfoFeature(
         }.bodyOrNull()
     }
 
+    /**
+     * Subscribes this session to [processorName] and [id], forwarding decoded binary frames to
+     * [returningFlow] until either side closes or heartbeat handling times out.
+     */
     private suspend fun DefaultClientWebSocketSession.handleFramesWebsocket(
         processorName: String,
         id: FramesSourceId,
@@ -123,9 +133,10 @@ open class KtorFramesDataInfoFeature(
     }
 
     /**
-     * Returns the shared, reconnecting WebSocket frame flow for [processorName] and [id].
+     * Returns a shared, reconnecting WebSocket frame flow for [processorName] and [id].
      *
-     * Repeated calls for the same pair reuse the previously allocated flow.
+     * Collectors of this returned flow share its connection. A separate method call creates a new
+     * shared flow.
      */
     override fun getFramesFlow(processorName: String, id: FramesSourceId): Flow<ByteArrayFrameData> {
         return channelFlow {

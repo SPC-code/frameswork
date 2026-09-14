@@ -7,9 +7,15 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import kotlinx.serialization.json.Json
 
+/**
+ * Installs JSON content negotiation using a shared kotlinx.serialization format.
+ *
+ * @property jsonFormat format used to encode and decode JSON request and response bodies.
+ */
 class ContentNegotiationKtorApplicationConfigurator(
     val jsonFormat: Json
 ) : KtorApplicationConfigurator {
+    /** Installs [ContentNegotiation] and registers [jsonFormat] as its JSON converter. */
     override fun Application.configure() {
         install(ContentNegotiation) {
             json(jsonFormat)

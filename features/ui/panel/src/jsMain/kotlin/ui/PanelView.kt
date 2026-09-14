@@ -7,6 +7,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.benasher44.uuid.uuid4
+import dev.inmo.kslog.common.e
 import dev.inmo.micro_utils.colors.black
 import dev.inmo.micro_utils.colors.common.HEXAColor
 import dev.inmo.micro_utils.colors.dimgray
@@ -79,13 +80,26 @@ import org.w3c.files.BlobPropertyBag
 import space.kscience.frameswork.features.common.web.utils.cssRGBA
 import space.kscience.frameswork.features.ui.panel.PanelStrings
 
+/**
+ * Compose Web navigation view that displays and edits a grid of child navigation views.
+ *
+ * Each panel item is decoded with [PanelViewModel.decodingJson] and rendered as a child node in the
+ * supplied navigation chain. Edit mode supports adding, moving, resizing, deleting, importing,
+ * and exporting items.
+ *
+ * @param chain navigation chain in which child item configurations are rendered.
+ * @param config navigation configuration for this panel node.
+ */
 class PanelView(
     chain: NavigationChain<ViewConfig>,
     config: PanelViewConfig,
 ) : ComposeView<PanelViewConfig, ViewConfig, PanelViewModel>(config, chain) {
+    /** View model resolved lazily with this view as the navigation-node factory parameter. */
     override val viewModel: PanelViewModel by inject(mode = LazyThreadSafetyMode.SYNCHRONIZED) { parametersOf(this@PanelView) }
 
+    /** CSS rules used by the panel grid and its editing overlays. */
     private object PanelViewStylesheet : StyleSheet() {
+        /** Absolutely positioned container that fills the available panel area. */
         val panelViewContainer by style {
             position(Position.Absolute)
             top(0.px)
@@ -93,11 +107,15 @@ class PanelView(
             right(0.px)
             left(0.px)
         }
+
+        /** Container that anchors panel-management controls to the top-right corner. */
         val managementButtonsContainer by style {
             position(Position.Absolute)
             top(0.px)
             right(0.px)
         }
+
+        /** Grid that lays out panel items and edit controls. */
         val panelViewGrid by style {
             display(DisplayStyle.Grid)
             gap(8.px)
@@ -107,6 +125,8 @@ class PanelView(
             right(0.px)
             left(0.px)
         }
+
+        /** Dashed grid decoration shown while panel editing is active. */
         val panelViewGridDragging by style {
             border {
                 style(LineStyle.Dashed)
@@ -114,6 +134,8 @@ class PanelView(
                 color(HEXAColor.black.cssRGBA)
             }
         }
+
+        /** Translucent per-cell drop target displayed during dragging or resizing. */
         val panelViewGridDraggingOverlap by style {
             width(100.percent)
             height(100.percent)
@@ -124,6 +146,7 @@ class PanelView(
             }
         }
 
+        /** Overlay container that exposes resize handles without intercepting other pointer input. */
         val panelViewGridEditResizeCellContainer by style {
             width(100.percent)
             maxWidth(100.percent)
@@ -134,6 +157,7 @@ class PanelView(
             overflow("hidden")
         }
 
+        /** Clipped container for a rendered panel-item view. */
         val panelViewGridResizeCellContainer by style {
             width(100.percent)
             maxWidth(100.percent)
@@ -143,10 +167,13 @@ class PanelView(
             overflow("hidden")
         }
 
+        /** Absolutely positioned resize handle along one side of an item. */
         val panelViewGridEditResizeCellSide by style {
             position(Position.Absolute)
             property("pointer-events", "auto")
         }
+
+        /** Drop target used to remove a dragged panel item. */
         val panelViewGridTrashArea by style {
             backgroundColor(HEXAColor.dimgray.copy(aOfOne = 0.5f).cssRGBA)
             position(Position.Relative)
@@ -166,6 +193,7 @@ class PanelView(
         }
     }
 
+    /** Draws the provider selector used by the add-item dialog. */
     @Composable
     fun ConfigEditingConfigProvidersDropdown() {
         Div(attrs = { classes("dropdown") }) {
@@ -202,6 +230,8 @@ class PanelView(
             }
         }
     }
+
+    /** Draws and manages the modal editor for a prospective panel-item configuration. */
     @Composable
     fun ConfigEditingModal() {
         val id = remember { uuid4().toString().replace("-", "") }
@@ -269,6 +299,7 @@ class PanelView(
         }
     }
 
+    /** Draws the current panel and, when enabled, all grid-editing controls. */
     @Composable
     override fun onDraw() {
         super.onDraw()
@@ -521,7 +552,7 @@ class PanelView(
                                                         }
                                                     }
                                                 }
-                                                console.error(newItem.toString())
+                                                this@PanelView.log.e { newItem.toString() }
                                                 if (item != newItem) {
                                                     viewModel.updateEditingPanel(
                                                         panelCurrentState.copy(
@@ -786,7 +817,9 @@ class PanelView(
         }
     }
 
+    /** Constants associated with the panel view's add-item dialog. */
     companion object {
+        /** Conventional add-item modal identifier exposed to callers. */
         const val addConfigModalId = "panel_view_add_config_modal"
     }
 }

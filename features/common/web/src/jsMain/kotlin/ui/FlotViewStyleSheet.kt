@@ -56,15 +56,35 @@ object FlotViewTokens {
     const val touchTarget = minimumTouchTarget
 }
 
+/**
+ * Semantic visual tone used by FlotView components.
+ *
+ * @property value CSS colour associated with the tone.
+ */
 enum class FlotViewTone(val value: CSSColorValue) {
+    /** Normal or secondary information. */
     Neutral(FlotViewTokens.muted),
+
+    /** Informational state that calls for attention without warning. */
     Info(FlotViewTokens.info),
+
+    /** Successful, healthy, or authorized state. */
     Success(FlotViewTokens.ok),
+
+    /** Deviation or pending action requiring operator attention. */
     Warning(FlotViewTokens.warning),
+
+    /** Alarm, failed operation, or unsafe state. */
     Error(FlotViewTokens.alarm),
 }
 
-/** Styles shared by all FlotView Compose Web components. */
+/**
+ * Styles shared by all FlotView Compose Web components.
+ *
+ * Public `*Class` constants are stable hooks used by the rendering components and may also be used
+ * by host markup. Constants without the `Class` suffix are compatibility aliases retained for the
+ * original UI-kit API.
+ */
 object FlotViewStyleSheet : StyleSheet() {
     const val rootClass = "flotview-root"
     const val panelClass = "flotview-panel"
@@ -1369,6 +1389,7 @@ object FlotViewStyleSheet : StyleSheet() {
     }
 }
 
+/** Emits [FlotViewStyleSheet] into the current Compose Web document. */
 @Composable
 fun InstallFlotViewStyles() {
     Style(FlotViewStyleSheet)

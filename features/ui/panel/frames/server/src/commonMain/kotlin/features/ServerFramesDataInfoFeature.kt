@@ -13,21 +13,24 @@ import space.kscience.frameswork.features.processor.server.ProcessorsContainer
 import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesDataInfoFeature
 
 /**
- * Implementation of [FramesDataInfoFeature] providing details about available processors,
- * frame sources, and their associated metadata. Additionally, this class offers access to
- * real-time frame data streams through a combination of processor names and frame source identifiers.
+ * Server-side [FramesDataInfoFeature] backed by the processors in [ProcessorsContainer].
  *
- * @constructor Creates an instance of [ServerFramesDataInfoFeature].
- * @param processorsContainer Container managing frame processors and their configurations.
- * @param frameSources Map associating frame source identifiers with their configurations.
+ * Processor and source queries return snapshots of the container's current state. Frame flows are
+ * cold: the requested processor and its persistent source flow are resolved when collection starts.
+ * Non-byte-backed frames are converted to [ByteArrayFrameData], and frames without a
+ * [FrameReceiveTimestamp] or with a timestamp older than the last emitted frame are discarded.
+ * Equal timestamps are retained.
+ *
+ * @property processorsContainer container that owns the processors queried and streamed by this
+ * feature.
+ * @property framesSourcesCollector frame-source registry required by the server feature wiring. The
+ * current implementation retains this dependency but obtains source snapshots from each processor.
  */
 open class ServerFramesDataInfoFeature(
     private val processorsContainer: ProcessorsContainer,
     private val framesSourcesCollector: FramesSourcesCollector,
 ) : FramesDataInfoFeature {
-    /**
-     * Returns the current processor names reported by [processorsContainer].
-     */
+    /** Returns the current processor names reported by [processorsContainer]. */
     override suspend fun getAvailableProcessors(): Set<String> {
         return processorsContainer.availableProcessors()
     }
@@ -35,6 +38,9 @@ open class ServerFramesDataInfoFeature(
     /**
      * Returns the current frame-source snapshot for [processorName], or `null` if no such processor
      * is registered.
+     *
+     * @param processorName name of the processor whose sources should be read.
+     * @return the processor's current source identifiers, or `null` for an unknown processor.
      */
     override suspend fun getAvailableFramesSources(processorName: String): Set<FramesSourceId>? {
         val processor = processorsContainer.getProcessor(processorName) ?: return null
@@ -42,13 +48,17 @@ open class ServerFramesDataInfoFeature(
     }
 
     /**
-     * Retrieves a flow of byte-array-based frame data, filtered and mapped according to the specified
-     * processor and frame source identifier.
+     * Returns a cold flow of timestamped, byte-backed frames for source [id] on [processorName].
      *
-     * @param processorName The name of the processor to retrieve frames from.
-     * @param id The identifier of the frame source associated with the processor.
-     * @return A flow emitting instances of [ByteArrayFrameData], filtered based on their metadata
-     *         timestamps to ensure only the new/latest frames are received.
+     * Collection completes without values when the processor is unknown. For a known processor, its
+     * persistent source flow remains quiet while [id] is unavailable and follows later source
+     * additions or replacements. Frames without [FrameReceiveTimestamp] are skipped. After the
+     * first emitted frame, a frame is skipped only when its timestamp is older than the preceding
+     * emitted timestamp; duplicate timestamps are allowed.
+     *
+     * @param processorName name of the processor that should produce the frames.
+     * @param id identifier of the source to stream from that processor.
+     * @return a cold flow of filtered [ByteArrayFrameData] values.
      */
     override fun getFramesFlow(processorName: String, id: FramesSourceId): Flow<ByteArrayFrameData> {
         return flow {

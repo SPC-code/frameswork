@@ -22,6 +22,19 @@ fun URLBuilder.fillAbsentPartsWith(defaultValues: URLBuilder) {
     trailingQuery = trailingQuery || defaultValues.trailingQuery
 }
 
+/**
+ * Merges [fallbackValues] into this builder while appending the fallback path and combining query
+ * parameters.
+ *
+ * Scalar fields already present in this builder are retained. Its path is followed by the fallback
+ * path; query parameters from both builders are preserved. When [forceSetDefaultProtocol] is true,
+ * the fallback protocol replaces this builder's protocol, which lets a relative WebSocket request
+ * keep its `ws` or `wss` scheme while adopting an HTTP base URL.
+ *
+ * @param fallbackValues values used for absent scalar fields and appended path/query components.
+ * @param forceSetDefaultProtocol whether a non-null fallback protocol must replace the receiver's
+ * protocol.
+ */
 fun URLBuilder.appendOrSetPartsWith(fallbackValues: URLBuilder, forceSetDefaultProtocol: Boolean = false) {
     val localCopyOfDefaults = fallbackValues.clone()
     protocolOrNull = if (forceSetDefaultProtocol && localCopyOfDefaults.protocolOrNull != null) localCopyOfDefaults.protocolOrNull else (protocolOrNull ?: localCopyOfDefaults.protocolOrNull)
@@ -39,6 +52,11 @@ fun URLBuilder.appendOrSetPartsWith(fallbackValues: URLBuilder, forceSetDefaultP
     trailingQuery = trailingQuery || localCopyOfDefaults.trailingQuery
 }
 
+/**
+ * Replaces every URL component in this builder with the corresponding component from [from].
+ *
+ * @param from the builder whose current state is copied.
+ */
 fun URLBuilder.set(from: URLBuilder) {
     protocolOrNull = from.protocolOrNull
     host = from.host

@@ -22,8 +22,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
 
+/** Verifies keyed half-cold flow creation, reuse, and subscription behavior. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class HalfColdFlowsTests {
+    /** Verifies that a subscriber receives values from the source associated with its key. */
     @Test
     fun subscriberReceivesValuesFromKeyedFlow() = runTest {
         val innerFlow = MutableSharedFlow<Int>(replay = 1)
@@ -49,6 +51,7 @@ class HalfColdFlowsTests {
         job.cancel()
     }
 
+    /** Verifies that result keys track the source and a still-referenced removed flow is reused. */
     @Test
     fun resultKeysFollowSourceMapAndRemovedFlowIsReusedWhenStillReferenced() = runTest {
         val sourceFlow = MutableStateFlow<Map<String, Flow<Int>>>(emptyMap())
@@ -70,6 +73,7 @@ class HalfColdFlowsTests {
         assertSame(originalFlow, resultState.value.getValue("a"))
     }
 
+    /** Verifies that subscribing to one key does not collect sources for other keys. */
     @Test
     fun onlySubscribedKeyCollectsItsSourceFlow() = runTest {
         var firstCollections = 0

@@ -23,12 +23,24 @@ import space.kscience.frameswork.features.ui.panel.frames.CommonPanelStrings
 import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesFlowFeatureId
 import space.kscience.frameswork.features.ui.panel.ui.PanelViewConfigProvider
 
+/**
+ * Compose Web configuration provider for selecting a processor and one of its camera sources.
+ *
+ * Processor and source snapshots are refreshed once per second. After both values are selected,
+ * [Draw] reports a [CameraViewConfig] to the panel editor.
+ *
+ * @param model source of processor and camera discovery data.
+ */
 class CameraPanelViewConfigProvider(
     private val model: CameraModel
 ) : PanelViewConfigProvider {
+    /** Localized title displayed for this provider in the panel editor. */
     override val title: String
         @Composable get() = CommonPanelStrings.cameraViewTitle.translation()
 
+    /**
+     * Draws processor and camera dropdowns and passes the completed configuration to [reportState].
+     */
     @Composable
     override fun Draw(reportState: (ViewConfig?) -> Unit) {
         val availableProcessorsNames = remember { mutableStateOf<Set<String>?>(emptySet()) }

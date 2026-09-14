@@ -18,9 +18,22 @@ import space.kscience.frameswork.features.ui.panel.PanelStrings
 import space.kscience.frameswork.features.ui.panel.ui.PanelViewConfigProvider
 import space.kscience.frameswork.features.ui.sample.ui.SampleViewConfig
 
+/**
+ * Built-in editor for creating a sample panel item with text and a background color.
+ *
+ * The editor reports `null` until both a non-blank text value and a color have been supplied.
+ */
 object SamplePanelViewConfigProvider : PanelViewConfigProvider {
+    /** Localized title used for this provider in the panel's provider selector. */
     override val title: String
         @Composable get() = PanelStrings.panelSampleTitle.translation()
+
+    /**
+     * Draws text and color inputs and reports a [SampleViewConfig] once both values are valid.
+     *
+     * @param reportState callback that receives the current configuration or `null` while either
+     * input is incomplete.
+     */
     @Composable
     override fun Draw(reportState: (ViewConfig?) -> Unit) {
         val backgroundColorState = remember { mutableStateOf<HEXAColor?>(null) }

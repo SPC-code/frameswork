@@ -58,23 +58,40 @@ import space.kscience.frameswork.features.ui.panel.frames.CameraStrings
 import kotlin.io.encoding.Base64
 import kotlin.math.roundToInt
 
+/**
+ * Compose Web view that renders a selected byte-backed camera stream as JPEG data URLs.
+ *
+ * The overlay reports the selected processor/source, live state, dimensions when frame metadata
+ * contains them, and the measured frame rate. [viewModel] is resolved from Koin with this view as
+ * the factory parameter.
+ *
+ * @param chain navigation chain that owns this view.
+ * @param config initial processor/source selection.
+ */
 class CameraView(
     chain: NavigationChain<ViewConfig>,
     config: CameraViewConfig,
 ) : ComposeView<CameraViewConfig, ViewConfig, CameraViewModel>(config, chain) {
+    /** View model resolved from Koin using this navigation view as the factory parameter. */
     override val viewModel: CameraViewModel by inject(mode = LazyThreadSafetyMode.SYNCHRONIZED) { parametersOf(this@CameraView) }
 
+    /** Styles used by the camera image and the retained loading-overlay layout. */
     private object CameraViewStyleSheet : StyleSheet() {
+        /** Full-size positioning context for the image surface. */
         val container by style {
             width(100.percent)
             height(100.percent)
             position(Position.Relative)
         }
+
+        /** Image style that preserves the frame aspect ratio inside the available surface. */
         val image by style {
             width(100.percent)
             height(100.percent)
             property("object-fit", "contain")
         }
+
+        /** Full-surface translucent loading-overlay style. */
         val loader by style {
             position(Position.Absolute)
             display(DisplayStyle.Flex)
@@ -92,6 +109,7 @@ class CameraView(
         }
     }
 
+    /** Collects frames, converts them to image data URLs, and draws the live camera surface. */
     @Composable
     override fun onDraw() {
         super.onDraw()

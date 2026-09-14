@@ -13,6 +13,15 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
+/**
+ * Display-ready process metric rendered by [FlotViewMetricGrid].
+ *
+ * @property label human-readable metric name.
+ * @property value preformatted measurement value.
+ * @property unit optional unit displayed next to [value].
+ * @property tone semantic colour applied to the metric card.
+ * @property hint optional secondary context such as a plan or limit.
+ */
 data class FlotViewMetric(
     val label: String,
     val value: String,
@@ -21,12 +30,39 @@ data class FlotViewMetric(
     val hint: String? = null,
 )
 
+/**
+ * One selectable layer in [FlotViewTabs].
+ *
+ * @property label text shown on the tab.
+ * @property selected whether this tab represents the current selection.
+ * @property disabled whether the tab ignores selection input.
+ */
 data class FlotViewTab(
     val label: String,
     val selected: Boolean = false,
     val disabled: Boolean = false,
 )
 
+/**
+ * Display and interaction state for one process setpoint.
+ *
+ * @property label human-readable control name.
+ * @property actual current process value.
+ * @property target editable target value.
+ * @property unit measurement unit for [actual] and [target].
+ * @property plan optional planned value or short planning note.
+ * @property step optional adjustment increment.
+ * @property limits optional permitted-range description.
+ * @property pending whether the target has an unsent change.
+ * @property disabled whether all editing is unavailable.
+ * @property decrementDisabled whether only decrementing is unavailable.
+ * @property incrementDisabled whether only incrementing is unavailable.
+ * @property message optional validation or status message.
+ * @property messageTone semantic colour for [message].
+ * @property actualLabel label used when showing [actual].
+ * @property stepLabel label used when showing [step].
+ * @property limitsLabel label used when showing [limits].
+ */
 data class FlotViewSetpoint(
     val label: String,
     val actual: String,
@@ -46,19 +82,52 @@ data class FlotViewSetpoint(
     val limitsLabel: String = "limits",
 )
 
+/** Selectable source of process-control setpoints. */
 enum class FlotViewMode { Auto, Manual }
 
+/** State of the operation that sends edited setpoints to the process controller. */
 sealed interface FlotViewSendState {
+    /** There are no changes waiting to be sent. */
     data object Idle : FlotViewSendState
+
+    /**
+     * One or more changes are ready to send.
+     *
+     * @property changes number of pending changes.
+     */
     data class Pending(val changes: Int) : FlotViewSendState
+
+    /** Changes are currently being sent. */
     data object Sending : FlotViewSendState
+
+    /**
+     * Sending is unavailable.
+     *
+     * @property message user-facing reason why sending is blocked.
+     */
     data class Blocked(val message: String) : FlotViewSendState
 }
 
+/** Generic loading state used to render asynchronous panel content. */
 sealed interface FlotViewState<out T> {
+    /** Data is still being loaded. */
     data object Loading : FlotViewState<Nothing>
+
+    /** Loading succeeded but produced no displayable value. */
     data object Empty : FlotViewState<Nothing>
+
+    /**
+     * Loading failed.
+     *
+     * @property message user-facing error description.
+     */
     data class Error(val message: String) : FlotViewState<Nothing>
+
+    /**
+     * Loading succeeded with a value.
+     *
+     * @property value content passed to the ready-state renderer.
+     */
     data class Ready<T>(val value: T) : FlotViewState<T>
 }
 
@@ -66,7 +135,8 @@ sealed interface FlotViewState<out T> {
  * Top-level 1280×800 panel shell from the reference design.
  *
  * [content] is placed in the responsive two-column body. Use [FlotViewColumn] for each column.
- * Styles are installed automatically, so a panel is usable without a separate setup call.
+ * Referencing the panel registers [FlotViewStyleSheet] with `StyleSheetsAggregator`; the host must
+ * render that aggregator or call [InstallFlotViewStyles] in its document.
  */
 @Composable
 fun FlotViewPanel(
@@ -119,6 +189,11 @@ fun FlotViewColumn(
     }
 }
 
+/**
+ * Renders a standard FlotView card with an optional section [title].
+ *
+ * Set [raised] for the elevated visual variant; [content] owns the card body.
+ */
 @Composable
 fun FlotViewCard(
     title: String? = null,
@@ -184,6 +259,7 @@ fun FlotViewStatusChip(
     }
 }
 
+/** Renders [metrics] as a responsive grid of consistently styled metric cards. */
 @Composable
 fun FlotViewMetricGrid(metrics: List<FlotViewMetric>) {
     Div(attrs = { classes(FlotViewStyleSheet.metricGridClass) }) {
@@ -199,6 +275,7 @@ fun FlotViewMetricGrid(metrics: List<FlotViewMetric>) {
     }
 }
 
+/** Low-level metric-card container that applies the requested semantic [tone]. */
 @Composable
 fun FlotViewMetricCardContainer(
     tone: FlotViewTone = FlotViewTone.Neutral,
@@ -211,6 +288,7 @@ fun FlotViewMetricCardContainer(
     }
 }
 
+/** Low-level label slot for a metric card. */
 @Composable
 fun FlotViewMetricCardLabel(
     label: @Composable () -> Unit,
@@ -220,6 +298,9 @@ fun FlotViewMetricCardLabel(
     }
 }
 
+/**
+ * Renders a metric card whose [value] is wrapped in an inline element beside its optional [unit].
+ */
 @Composable
 fun FlotViewMetricCard(
     value: @Composable () -> Unit,
@@ -242,6 +323,9 @@ fun FlotViewMetricCard(
     }
 }
 
+/**
+ * Renders a metric card without wrapping [value], allowing callers to supply custom block markup.
+ */
 @Composable
 fun FlotViewMetricCardUnspannedValue(
     value: @Composable () -> Unit,
@@ -266,6 +350,13 @@ fun FlotViewMetricCardUnspannedValue(
     }
 }
 
+/**
+ * Renders an accessible tab list and reports the index of an enabled tab through [onSelected].
+ *
+ * @param tabs ordered tab display states.
+ * @param onSelected invoked with the clicked tab index.
+ * @param label optional visible and accessible label for the tab list.
+ */
 @Composable
 fun FlotViewTabs(
     tabs: List<FlotViewTab>,
@@ -358,6 +449,14 @@ fun FlotViewRecommendationCard(
     }
 }
 
+/**
+ * Renders the automatic/manual control-mode switch.
+ *
+ * @param selected currently active mode.
+ * @param onSelected invoked with an enabled mode selected by the operator.
+ * @param enabled controls interaction for both options.
+ * @param label accessible label for the option group.
+ */
 @Composable
 fun FlotViewModeSwitch(
     selected: FlotViewMode,
@@ -385,6 +484,12 @@ fun FlotViewModeSwitch(
     }
 }
 
+/**
+ * Renders an accessible decrement/value/increment control for one display-ready [value].
+ *
+ * The caller owns the numeric value and enforces domain limits via [decrementDisabled] and
+ * [incrementDisabled].
+ */
 @Composable
 fun FlotViewStepper(
     value: String,
@@ -432,6 +537,12 @@ fun FlotViewStepper(
     }
 }
 
+/**
+ * Lays out one setpoint description beside its [stepper] and optional validation [message].
+ *
+ * [pending] and [disabled] only select visual states; callers remain responsible for disabling the
+ * controls supplied in [stepper].
+ */
 @Composable
 fun FlotViewSetpointRow(
     pending: Boolean = false,
@@ -461,6 +572,7 @@ fun FlotViewSetpointRow(
     }
 }
 
+/** Provides the standard vertical container for a caller-rendered setpoint list. */
 @Composable
 fun FlotViewSetpointList(content: @Composable () -> Unit) {
     Div(attrs = { classes(FlotViewStyleSheet.setpointListClass) }) {
@@ -468,6 +580,12 @@ fun FlotViewSetpointList(content: @Composable () -> Unit) {
     }
 }
 
+/**
+ * Renders a FlotView action button and selects its semantic variant from the supplied flags.
+ *
+ * Variant precedence is danger, success, primary, then neutral. A disabled button does not attach
+ * [onClick].
+ */
 @Composable
 fun FlotViewActionButton(
     label: String,
@@ -541,6 +659,11 @@ fun FlotViewSendControls(
     }
 }
 
+/**
+ * Renders an accessible loading, empty, error, or informational message panel.
+ *
+ * An action is shown only when both [actionLabel] and [onAction] are supplied.
+ */
 @Composable
 fun FlotViewStatePanel(
     title: String,
@@ -579,6 +702,11 @@ fun FlotViewStatePanel(
     }
 }
 
+/**
+ * Selects the appropriate standard UI for [state] and delegates a ready value to [content].
+ *
+ * The retry action is included for an error only when [onRetry] is supplied.
+ */
 @Composable
 fun <T> FlotViewStateContent(
     state: FlotViewState<T>,
@@ -610,6 +738,7 @@ fun <T> FlotViewStateContent(
     }
 }
 
+/** CSS class corresponding to this tone in [FlotViewStyleSheet]. */
 private val FlotViewTone.cssClass: String
     get() = when (this) {
         FlotViewTone.Neutral -> FlotViewStyleSheet.toneNeutralClass
@@ -619,6 +748,7 @@ private val FlotViewTone.cssClass: String
         FlotViewTone.Error -> FlotViewStyleSheet.toneErrorClass
     }
 
+/** Formats [value] and [unit] with conventional spacing for compact metric displays. */
 internal fun formatFlotViewMeasurement(value: String, unit: String): String = when (unit) {
     "%", "°", "°C", "°F" -> "$value$unit"
     "" -> value
