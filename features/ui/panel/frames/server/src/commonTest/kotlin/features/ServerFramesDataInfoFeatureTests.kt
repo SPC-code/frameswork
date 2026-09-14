@@ -30,7 +30,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ServerPanelCameraInfoFeatureTests {
+class ServerFramesDataInfoFeatureTests {
     @Test
     fun processorQueriesExposeNamesAndCurrentSources() = runTest {
         val leftSource = FramesSourceId("left")
@@ -47,7 +47,7 @@ class ServerPanelCameraInfoFeatureTests {
             collector = collector,
             processorNames = setOf("main", "diagnostic"),
         )
-        val feature = ServerPanelCameraInfoFeature(
+        val feature = ServerFramesDataInfoFeature(
             container,
             InMemoryFramesSourcesCollector(emptyList(), backgroundScope),
         )
@@ -63,7 +63,7 @@ class ServerPanelCameraInfoFeatureTests {
 
     @Test
     fun framesFlowForUnknownProcessorCompletesWithoutValues() = runTest {
-        val feature = ServerPanelCameraInfoFeature(
+        val feature = ServerFramesDataInfoFeature(
             processorsContainer(backgroundScope, TestFramesCollector(), setOf("main")),
             InMemoryFramesSourcesCollector(emptyList(), backgroundScope),
         )
@@ -80,7 +80,7 @@ class ServerPanelCameraInfoFeatureTests {
             frameFlows = mapOf(sourceId to frames.receiveAsFlow()),
         )
         val container = processorsContainer(backgroundScope, collector, setOf("main"))
-        val feature = ServerPanelCameraInfoFeature(
+        val feature = ServerFramesDataInfoFeature(
             container,
             InMemoryFramesSourcesCollector(emptyList(), backgroundScope),
         )

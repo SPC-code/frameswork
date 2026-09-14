@@ -10,7 +10,7 @@ import space.kscience.frameswork.features.frames.common.models.FramesSourceId
  * A frame stream is addressed by both a processor name and a [FramesSourceId]. Metadata queries
  * are independent of stream collection and return finite snapshots rather than update flows.
  */
-interface PanelCameraInfoFeature {
+interface FramesDataInfoFeature {
     /**
      * Returns the names of processors that are currently available for frame processing.
      */
@@ -22,11 +22,6 @@ interface PanelCameraInfoFeature {
      * @return the processor's frame-source identifiers, or `null` when the processor is unknown.
      */
     suspend fun getAvailableFramesSources(processorName: String): Set<FramesSourceId>?
-
-    /**
-     * Returns frame-source identifiers for which parameter metadata is available.
-     */
-    suspend fun getAvailableFramesSourcesWithParametersInfo(): Set<FramesSourceId>
 
     /**
      * Returns a stream of byte-backed frames produced for [id] by [processorName].

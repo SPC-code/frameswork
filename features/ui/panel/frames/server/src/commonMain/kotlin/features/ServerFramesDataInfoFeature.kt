@@ -10,21 +10,21 @@ import space.kscience.frameswork.features.frames.common.models.FrameReceiveTimes
 import space.kscience.frameswork.features.frames.common.models.FramesSourceId
 import space.kscience.frameswork.features.frames.common.services.FramesSourcesCollector
 import space.kscience.frameswork.features.processor.server.ProcessorsContainer
-import space.kscience.frameswork.features.ui.panel.frames.common.features.PanelCameraInfoFeature
+import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesDataInfoFeature
 
 /**
- * Implementation of [PanelCameraInfoFeature] providing details about available processors,
+ * Implementation of [FramesDataInfoFeature] providing details about available processors,
  * frame sources, and their associated metadata. Additionally, this class offers access to
  * real-time frame data streams through a combination of processor names and frame source identifiers.
  *
- * @constructor Creates an instance of [ServerPanelCameraInfoFeature].
+ * @constructor Creates an instance of [ServerFramesDataInfoFeature].
  * @param processorsContainer Container managing frame processors and their configurations.
  * @param frameSources Map associating frame source identifiers with their configurations.
  */
-class ServerPanelCameraInfoFeature(
+open class ServerFramesDataInfoFeature(
     private val processorsContainer: ProcessorsContainer,
     private val framesSourcesCollector: FramesSourcesCollector,
-) : PanelCameraInfoFeature {
+) : FramesDataInfoFeature {
     /**
      * Returns the current processor names reported by [processorsContainer].
      */
@@ -39,17 +39,6 @@ class ServerPanelCameraInfoFeature(
     override suspend fun getAvailableFramesSources(processorName: String): Set<FramesSourceId>? {
         val processor = processorsContainer.getProcessor(processorName) ?: return null
         return processor.sourcesListUpdatesFlow.value
-    }
-
-    /**
-     * Returns the identifiers present in [frameSources].
-     *
-     * This configuration-backed set can omit sources that are exposed by a processor but have no
-     * parameter configuration.
-     */
-    override suspend fun getAvailableFramesSourcesWithParametersInfo(): Set<FramesSourceId> {
-        // TODO::FIX
-        return framesSourcesCollector.framesSourcesIdsListUpdatesFlow.value // THIS LIST CAN BE UNCOMPLETE
     }
 
     /**

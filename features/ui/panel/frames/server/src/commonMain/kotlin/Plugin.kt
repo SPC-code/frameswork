@@ -5,18 +5,18 @@ import kotlinx.serialization.json.JsonObject
 import org.koin.core.Koin
 import org.koin.core.module.Module
 import space.kscience.frameswork.features.frames.common.services.FramesSourcesCollector
-import space.kscience.frameswork.features.ui.panel.frames.common.features.PanelCameraInfoFeature
-import space.kscience.frameswork.features.ui.panel.frames.server.features.ServerPanelCameraInfoFeature
+import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesDataInfoFeature
+import space.kscience.frameswork.features.ui.panel.frames.server.features.ServerFramesDataInfoFeature
 
 object Plugin : StartPlugin {
     override fun Module.setupDI(config: JsonObject) {
         single {
-            ServerPanelCameraInfoFeature(
+            ServerFramesDataInfoFeature(
                 processorsContainer = get(),
                 framesSourcesCollector = get<FramesSourcesCollector>()
             )
         }
-        single<PanelCameraInfoFeature> { get<ServerPanelCameraInfoFeature>() }
+        single<FramesDataInfoFeature> { get<ServerFramesDataInfoFeature>() }
     }
 
     override suspend fun startPlugin(koin: Koin) {

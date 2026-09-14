@@ -18,14 +18,13 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
-import space.kscience.frameswork.features.frames.common.models.FramesSourceId
 import space.kscience.frameswork.features.frames.common.utils.encodeToByteArray
 import space.kscience.frameswork.features.ui.panel.frames.common.PanelCameraConstants
 import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesFlowFeatureId
-import space.kscience.frameswork.features.ui.panel.frames.common.features.PanelCameraInfoFeature
+import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesDataInfoFeature
 
-class PanelCameraInfoFeatureRoutingsConfigurator(
-    private val feature: PanelCameraInfoFeature,
+class FramesDataInfoFeatureRoutingsConfigurator(
+    private val feature: FramesDataInfoFeature,
     private val json: Json
 ) : ApplicationRoutingConfigurator.Element {
     override fun Route.invoke() {
@@ -38,9 +37,6 @@ class PanelCameraInfoFeatureRoutingsConfigurator(
             get(PanelCameraConstants.getAvailableCamerasPathPart) {
                 val processorName = call.parameters.getOrFail<String>(idParameterName)
                 call.respondNullable(feature.getAvailableFramesSources(processorName))
-            }
-            get(PanelCameraConstants.getAvailableFramesSourcesWithParametersInfoPathPart) {
-                call.respond(feature.getAvailableFramesSourcesWithParametersInfo())
             }
 
             webSocket(PanelCameraConstants.getFramesPathPart) {

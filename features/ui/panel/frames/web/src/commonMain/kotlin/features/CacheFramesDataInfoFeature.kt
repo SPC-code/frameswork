@@ -1,28 +1,22 @@
 package space.kscience.frameswork.features.ui.panel.frames.features
 
-import dev.inmo.micro_utils.coroutines.runCatchingLogging
-import io.ktor.client.plugins.websocket.ws
 import korlibs.time.DateTime
 import korlibs.time.seconds
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import space.kscience.frameswork.features.common.common.utils.toSharedFlow
 import space.kscience.frameswork.features.frames.common.models.ByteArrayFrameData
 import space.kscience.frameswork.features.frames.common.models.FramesSourceId
-import space.kscience.frameswork.features.ui.panel.frames.common.features.PanelCameraInfoFeature
+import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesDataInfoFeature
 import kotlin.collections.plus
 import kotlin.collections.set
 import kotlin.time.Duration
 
 /**
- * [PanelCameraInfoFeature] decorator that caches metadata queries and delegates frame streaming.
+ * [FramesDataInfoFeature] decorator that caches metadata queries and delegates frame streaming.
  *
  * Each metadata operation has an independent, mutex-protected cache. Processor-specific and
  * source-specific results are cached separately by their identifiers; `null` processor lookups are
@@ -31,11 +25,11 @@ import kotlin.time.Duration
  * @param fallback feature used to refresh expired metadata and provide frame flows.
  * @param cacheTime duration for which a cached metadata result remains valid.
  */
-class CachePanelCameraInfoFeature(
-    private val fallback: PanelCameraInfoFeature,
+open class CacheFramesDataInfoFeature(
+    private val fallback: FramesDataInfoFeature,
     private val cacheTime: Duration = 5.seconds,
     private val scope: CoroutineScope,
-) : PanelCameraInfoFeature {
+) : FramesDataInfoFeature {
     private var getAvailableProcessorsCache: Pair<DateTime, Set<String>>? = null
     private val getAvailableProcessorsCacheMutex = Mutex()
 
@@ -73,28 +67,6 @@ class CachePanelCameraInfoFeature(
                 val sources = fallback.getAvailableFramesSources(processorName)
                 getAvailableFramesSourcesCache[processorName] = DateTime.now() to sources
                 sources
-            } else {
-                capturedGetAvailableProcessorsCache.second
-            }
-        }
-    }
-
-    private var getAvailableFramesSourcesWithParametersInfoCache: Pair<DateTime, Set<FramesSourceId>>? = null
-    private val getAvailableFramesSourcesWithParametersInfoCacheMutex = Mutex()
-
-    /**
-     * Returns cached identifiers of sources with parameter metadata, refreshing them through
-     * [fallback] after [cacheTime].
-     */
-    override suspend fun getAvailableFramesSourcesWithParametersInfo(): Set<FramesSourceId> {
-        return getAvailableFramesSourcesWithParametersInfoCacheMutex.withLock {
-            val now = DateTime.now()
-            val capturedGetAvailableProcessorsCache = getAvailableFramesSourcesWithParametersInfoCache
-
-            if (capturedGetAvailableProcessorsCache == null || now - capturedGetAvailableProcessorsCache.first > cacheTime) {
-                val processors = fallback.getAvailableFramesSourcesWithParametersInfo()
-                getAvailableFramesSourcesWithParametersInfoCache = DateTime.now() to processors
-                processors
             } else {
                 capturedGetAvailableProcessorsCache.second
             }

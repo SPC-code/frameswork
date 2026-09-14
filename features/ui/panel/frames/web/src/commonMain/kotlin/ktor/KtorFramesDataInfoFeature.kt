@@ -1,15 +1,11 @@
 package space.kscience.frameswork.features.ui.panel.frames.ktor
 
-import dev.inmo.micro_utils.coroutines.SmartRWLocker
 import dev.inmo.micro_utils.coroutines.runCatchingLogging
-import dev.inmo.micro_utils.coroutines.withReadAcquire
-import dev.inmo.micro_utils.coroutines.withWriteLock
 import dev.inmo.micro_utils.ktor.client.bodyOrNull
 import dev.inmo.micro_utils.repos.ktor.common.idParameterName
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.ws
-import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.websocket.Frame
@@ -29,11 +25,11 @@ import space.kscience.frameswork.features.frames.common.models.FramesSourceId
 import space.kscience.frameswork.features.frames.common.utils.decodeFrameData
 import space.kscience.frameswork.features.ui.panel.frames.common.PanelCameraConstants
 import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesFlowFeatureId
-import space.kscience.frameswork.features.ui.panel.frames.common.features.PanelCameraInfoFeature
+import space.kscience.frameswork.features.ui.panel.frames.common.features.FramesDataInfoFeature
 import kotlin.time.Duration
 
 /**
- * Remote [PanelCameraInfoFeature] that obtains metadata over HTTP and frames over WebSocket.
+ * Remote [FramesDataInfoFeature] that obtains metadata over HTTP and frames over WebSocket.
  *
  * Frame flows are shared per processor/source pair. A shared flow reconnects after a connection
  * ends and uses an application-level `ping`/`pong` exchange to detect an inactive connection.
@@ -45,18 +41,16 @@ import kotlin.time.Duration
  * @param reconnectTimeoutMillis delay before another WebSocket connection attempt.
  * @param scope scope in which processor/source frame flows are shared.
  */
-class KtorPanelCameraInfoFeature(
+open class KtorFramesDataInfoFeature(
     private val client: HttpClient,
     private val json: Json,
     private val receiveFrameTimeoutMillis: Duration = 1.seconds,
     private val receivePongTimeoutMillis: Duration = 5.seconds,
     private val reconnectTimeoutMillis: Duration = 3.seconds,
     private val scope: CoroutineScope,
-) : PanelCameraInfoFeature {
+) : FramesDataInfoFeature {
     private val getAvailableProcessorsFullPath = "${PanelCameraConstants.rootPathPart}/${PanelCameraConstants.getAvailableProcessorsPathPart}"
     private val getAvailableCamerasFullPath = "${PanelCameraConstants.rootPathPart}/${PanelCameraConstants.getAvailableCamerasPathPart}"
-    private val getAvailableFramesSourcesWithParametersInfoFullPath = "${PanelCameraConstants.rootPathPart}/${PanelCameraConstants.getAvailableFramesSourcesWithParametersInfoPathPart}"
-    private val getAvailableParametersInfoFullPath = "${PanelCameraConstants.rootPathPart}/${PanelCameraConstants.getAvailableParametersInfoPathPart}"
     private val getFramesFlowFullPath = "${PanelCameraConstants.rootPathPart}/${PanelCameraConstants.getFramesPathPart}"
 
     /**
@@ -75,14 +69,6 @@ class KtorPanelCameraInfoFeature(
         return client.get(getAvailableCamerasFullPath) {
             parameter(idParameterName, processorName)
         }.bodyOrNull()
-    }
-
-    /**
-     * Requests the identifiers of sources for which parameter metadata is available, falling back to
-     * an empty set when the response status is not `200 OK`.
-     */
-    override suspend fun getAvailableFramesSourcesWithParametersInfo(): Set<FramesSourceId> {
-        return client.get(getAvailableFramesSourcesWithParametersInfoFullPath).bodyOrNull() ?: emptySet()
     }
 
     private suspend fun DefaultClientWebSocketSession.handleFramesWebsocket(

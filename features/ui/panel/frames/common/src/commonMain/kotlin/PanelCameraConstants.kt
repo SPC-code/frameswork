@@ -5,7 +5,5 @@ object PanelCameraConstants {
 
     const val getAvailableProcessorsPathPart = "getAvailableProcessors"
     const val getAvailableCamerasPathPart = "getAvailableCameras"
-    const val getAvailableFramesSourcesWithParametersInfoPathPart = "getAvailableFramesSourcesWithParametersInfo"
-    const val getAvailableParametersInfoPathPart = "getAvailableParametersInfo"
     const val getFramesPathPart = "getFrames"
 }
