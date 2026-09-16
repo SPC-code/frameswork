@@ -24,11 +24,11 @@ publishing {
 
                 description = "Set of plugins to handle frames in one system"
                 name = "frameswork"
-                url = "https://git.sciprog.center/InsanusMokrassar/frameswork"
+                url = "https://git.sciprog.center/kscience/frameswork"
 
                 scm {
-                    developerConnection = "scm:git:[fetch=]https://git.sciprog.center/InsanusMokrassar/frameswork.git[push=]https://git.sciprog.center/InsanusMokrassar/frameswork.git"
-                    url = "https://git.sciprog.center/InsanusMokrassar/frameswork.git"
+                    developerConnection = "scm:git:[fetch=]https://git.sciprog.center/kscience/frameswork.git[push=]https://git.sciprog.center/kscience/frameswork.git"
+                    url = "https://git.sciprog.center/kscience/frameswork.git"
                 }
 
                 developers {
